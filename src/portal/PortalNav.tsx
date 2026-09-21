@@ -13,7 +13,7 @@ interface NavItem {
 }
 
 const DELIVERY: NavItem[] = [
-  { to: '/portal', label: 'Published', icon: BookOpenIcon },
+  { to: '/portal', label: 'Dashboard', icon: BookOpenIcon },
   { to: '/portal/delivery', label: 'What’s coming', icon: CalendarClockIcon },
   { to: '/portal/notifications', label: 'Notifications', icon: BellIcon }
 ];
