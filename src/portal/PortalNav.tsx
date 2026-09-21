@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { BellIcon, BookOpenIcon, CalendarClockIcon, ChevronDownIcon, CreditCardIcon, UsersIcon, ZapIcon } from 'lucide-react';
+import { BellIcon, BookOpenIcon, CalendarClockIcon, ChevronDownIcon, CreditCardIcon, UsersIcon } from 'lucide-react';
 import { usePortalSession } from './session';
 import { notificationsForOrg } from '../data/publications';
 import { OrgRole } from '../types';
@@ -66,7 +66,7 @@ function NavGroup({ label, items, onNavigate }: {label: string;items: NavItem[];
 }
 
 export function PortalNav({ isDrawerOpen = false, onNavigate }: {isDrawerOpen?: boolean;onNavigate?: () => void;}) {
-  const { orgId, orgName, userName, role, setRole } = usePortalSession();
+  const { orgId, userName, role, setRole } = usePortalSession();
   const unread = notificationsForOrg(orgId).filter((n) => !n.read).length;
   const delivery = DELIVERY.map((item) =>
   item.to === '/portal/notifications' && unread > 0 ? {...item, badge: String(unread)} :
@@ -82,16 +82,6 @@ export function PortalNav({ isDrawerOpen = false, onNavigate }: {isDrawerOpen?: 
       'hidden'} h-full shrink-0 flex-col justify-between lg:static lg:z-auto lg:flex lg:w-56 lg:border-r-0 lg:bg-transparent lg:p-3 lg:shadow-none`}>
 
       <div className="space-y-5 overflow-y-auto">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-ink">
-            <ZapIcon className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-bold text-ink">{orgName}</p>
-            <p className="text-2xs text-ink-mute">Category intelligence from Pure Play</p>
-          </div>
-        </div>
-
         <NavGroup label="Delivery" items={delivery} onNavigate={onNavigate} />
         <NavGroup label="Account" items={ACCOUNT} onNavigate={onNavigate} />
       </div>

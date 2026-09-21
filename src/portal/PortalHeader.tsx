@@ -1,6 +1,6 @@
-import { BellIcon, MenuIcon, SearchIcon, XIcon } from 'lucide-react';
+import { BellIcon, MenuIcon, SearchIcon, XIcon, ZapIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { orgUsers } from '../data/orgs';
 import { notificationsForOrg, publicationsForOrg } from '../data/publications';
 import { usePortalSession } from './session';
@@ -63,19 +63,37 @@ export function PortalHeader({ onMenuOpen, onProfileOpen, profileOpen }: PortalH
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-card px-3">
-      <button
-        type="button"
-        onClick={onMenuOpen}
-        aria-label="Open navigation"
-        className="flex h-9 w-9 items-center justify-center rounded-xl bg-shell text-ink-soft transition-colors duration-150 hover:text-ink lg:hidden">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-card px-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)_minmax(0,1fr)]">
+      <div className="flex min-w-0 items-center gap-2.5 lg:col-start-1">
+        <button
+          type="button"
+          onClick={onMenuOpen}
+          aria-label="Open navigation"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-shell text-ink-soft transition-colors duration-150 hover:text-ink lg:hidden">
 
-        <MenuIcon className="h-4 w-4" />
-      </button>
+          <MenuIcon className="h-4 w-4" />
+        </button>
 
-      <p className={`shrink-0 text-sm font-bold text-ink ${searchExpanded ? 'hidden sm:block' : ''}`}>{orgName}</p>
+        <Link to="/portal" className={`flex min-w-0 items-center gap-2.5 ${searchExpanded ? 'hidden sm:flex' : ''}`}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-ink">
+            <ZapIcon className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+          </span>
+          <span className="hidden truncate text-sm font-bold text-ink sm:block">{orgName}</span>
+        </Link>
 
-      <div ref={searchRef} className={`relative ${searchExpanded ? 'flex flex-1' : 'hidden'} lg:flex lg:max-w-xl lg:flex-1`}>
+        {!searchExpanded &&
+        <button
+          type="button"
+          onClick={() => setSearchExpanded(true)}
+          aria-label="Search published outputs"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-shell text-ink-soft transition-colors duration-150 hover:text-ink lg:hidden">
+
+          <SearchIcon className="h-4 w-4" />
+        </button>
+        }
+      </div>
+
+      <div ref={searchRef} className={`relative ${searchExpanded ? 'flex flex-1' : 'hidden'} lg:col-start-2 lg:flex lg:w-full`}>
         <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-mute" />
         <input
           ref={inputRef}
@@ -146,18 +164,7 @@ export function PortalHeader({ onMenuOpen, onProfileOpen, profileOpen }: PortalH
         }
       </div>
 
-      {!searchExpanded &&
-      <button
-        type="button"
-        onClick={() => setSearchExpanded(true)}
-        aria-label="Search published outputs"
-        className="flex h-9 w-9 items-center justify-center rounded-xl bg-shell text-ink-soft transition-colors duration-150 hover:text-ink lg:hidden">
-
-        <SearchIcon className="h-4 w-4" />
-      </button>
-      }
-
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2 lg:col-start-3 lg:ml-0 lg:justify-self-end">
         <NavLink
           to="/portal/notifications"
           aria-label={`Notifications, ${unread} unread`}
