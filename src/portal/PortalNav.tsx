@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { BellIcon, BookOpenIcon, CalendarClockIcon, CreditCardIcon, UsersIcon } from 'lucide-react';
+import { BellIcon, BookOpenIcon, CalendarClockIcon, CreditCardIcon, MessageSquareIcon, UsersIcon } from 'lucide-react';
 import { usePortalSession } from './session';
 import { notificationsForOrg } from '../data/publications';
 
@@ -19,6 +19,7 @@ const DELIVERY: NavItem[] = [
 
 const ACCOUNT: NavItem[] = [
   { to: '/portal/team', label: 'Team', icon: UsersIcon, adminOnly: true },
+  { to: '/portal/feedback', label: 'Feedback', icon: MessageSquareIcon, adminOnly: true },
   { to: '/portal/subscription', label: 'Subscription', icon: CreditCardIcon, adminOnly: true }
 ];
 

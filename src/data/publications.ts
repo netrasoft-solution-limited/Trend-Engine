@@ -27,6 +27,29 @@ export class TenantScopeError extends Error {
   }
 }
 
+/**
+ * PRD §6.6's six output types, as the portal is allowed to know them: a label
+ * (matches `Publication.type` exactly) and a URL-friendly slug for filter
+ * query strings. This is the only "type list" the portal has — it is not
+ * `outputTypes` from `data/outputs.ts`, which the portal must never import.
+ */
+export const PUBLICATION_TYPES: { slug: string; label: string }[] = [
+  { slug: 'trend_brief', label: 'Trend intelligence brief' },
+  { slug: 'content_queue', label: 'Monthly content queue' },
+  { slug: 'content_brief', label: 'Content brief / draft' },
+  { slug: 'product_memo', label: 'Product / opportunity memo' },
+  { slug: 'research_alert', label: 'Research alert' },
+  { slug: 'visibility_benchmark', label: 'Visibility benchmark' }
+];
+
+export function typeSlugToLabel(slug: string): string | undefined {
+  return PUBLICATION_TYPES.find((t) => t.slug === slug)?.label;
+}
+
+export function typeLabelToSlug(label: string): string | undefined {
+  return PUBLICATION_TYPES.find((t) => t.label === label)?.slug;
+}
+
 const publications: Publication[] = [
   {
     id: 'PUB-0042',
@@ -126,6 +149,194 @@ const publications: Publication[] = [
     notifiedAt: 'Sep 08 08:00'
   },
   {
+    id: 'PUB-0046',
+    outputId: 'OUT-2810',
+    versionId: 'OV-2810-1',
+    version: 1,
+    orgId: 'org-jarrow',
+    type: 'Trend intelligence brief',
+    title: 'Week of Sep 21 — three ranked developments',
+    summary: 'Magnesium form comparison continues to lead. A new co-dosing question is opening up around vitamin D and K2.',
+    body: [
+      {
+        heading: 'Three things to know',
+        text: 'Buyers are still comparing magnesium forms rather than asking whether to take it at all. A parallel question is opening up around vitamin D and K2 co-dosing. Berberine’s safety conversation has cooled since last week.'
+      },
+      {
+        heading: 'Recommended actions',
+        text: 'Keep the magnesium form-comparison content in production. Hold on a co-dosing explainer until the research alert on vitamin D and K2 has been reviewed.'
+      }
+    ],
+    publishedBy: 'abubakar',
+    publishedAt: 'Sep 20 08:00',
+    unpublishedAt: null,
+    notifiedAt: 'Sep 20 08:00'
+  },
+  {
+    id: 'PUB-0044',
+    outputId: 'OUT-2809',
+    versionId: 'OV-2809-1',
+    version: 1,
+    orgId: 'org-jarrow',
+    type: 'Research alert',
+    title: 'Vitamin D and K2 co-dosing: what the ratio question is actually asking',
+    summary: 'Buyers are asking whether taking vitamin D and K2 together needs a specific ratio. The literature supports co-administration but not one settled ratio.',
+    body: [
+      {
+        heading: 'In plain language',
+        text: 'Buyers are asking whether vitamin D and K2 need to be taken in a specific ratio. The literature supports taking them together, but it does not establish one optimal ratio for general use.'
+      },
+      {
+        heading: 'Limitations',
+        text: 'No head-to-head trial defines a single best ratio. Treat any specific number as a starting point, not a settled answer.'
+      }
+    ],
+    publishedBy: 'abubakar',
+    publishedAt: 'Sep 17 10:30',
+    unpublishedAt: null,
+    notifiedAt: 'Sep 17 10:30'
+  },
+  {
+    id: 'PUB-0043',
+    outputId: 'OUT-2808',
+    versionId: 'OV-2808-1',
+    version: 1,
+    orgId: 'org-jarrow',
+    type: 'Product / opportunity memo',
+    title: 'Berberine: portfolio gap and safety exposure',
+    summary: 'Renewed berberine interest is paired with a visible safety conversation about drug interactions.',
+    body: [
+      {
+        heading: 'Observed demand',
+        text: 'Renewed interest in berberine is showing up across buyer questions, paired with a visible safety conversation about interactions.'
+      },
+      {
+        heading: 'Risks',
+        text: 'The framing driving attention compares berberine to a prescription medication class. That comparison is not one we can use in consumer-facing content.'
+      }
+    ],
+    publishedBy: 'abubakar',
+    publishedAt: 'Sep 10 14:00',
+    unpublishedAt: null,
+    notifiedAt: 'Sep 10 14:00'
+  },
+  {
+    id: 'PUB-0038',
+    outputId: 'OUT-2807',
+    versionId: 'OV-2807-2',
+    version: 2,
+    orgId: 'org-jarrow',
+    type: 'Visibility benchmark',
+    title: 'August brand visibility vs. four competitors',
+    summary: 'Your brand’s presence in category-level answers held steady month over month against the four competitors we track.',
+    body: [
+      {
+        heading: 'What changed',
+        text: 'Your brand’s presence in category-level answers held steady month over month against the four competitors we track.'
+      },
+      {
+        heading: 'Limitations',
+        text: 'This is a snapshot of parsed answers, not a market-share measurement.'
+      }
+    ],
+    publishedBy: 'abubakar',
+    publishedAt: 'Aug 28 09:00',
+    unpublishedAt: null,
+    notifiedAt: 'Aug 28 09:00'
+  },
+  {
+    id: 'PUB-0035',
+    outputId: 'OUT-2806',
+    versionId: 'OV-2806-1',
+    version: 1,
+    orgId: 'org-jarrow',
+    type: 'Content brief / draft',
+    title: 'Creatine for cognition — buyer education',
+    summary: 'Creatine is reaching cognition and healthy-aging buyers, not just performance buyers. The brief leads with the existing product.',
+    body: [
+      {
+        heading: 'Angle',
+        text: 'The audience shift is real: creatine is reaching cognition and healthy-aging buyers, not just performance buyers. The content leads with the existing product, not a new one.'
+      },
+      {
+        heading: 'Guardrails',
+        text: 'Do not extrapolate sleep-restricted study populations to a general, rested audience.'
+      }
+    ],
+    publishedBy: 'abubakar',
+    publishedAt: 'Aug 10 11:00',
+    unpublishedAt: null,
+    notifiedAt: null
+  },
+  {
+    id: 'PUB-0033',
+    outputId: 'OUT-2805',
+    versionId: 'OV-2805-1',
+    version: 1,
+    orgId: 'org-jarrow',
+    type: 'Monthly content queue',
+    title: 'August content queue — 3 long-form, 4 PDP opportunities',
+    summary: 'Seven ranked opportunities with rationale, sources and a named reviewer for each.',
+    body: [
+      {
+        heading: 'Long-form',
+        text: 'Postbiotic vocabulary explainer · Magnesium for sleep, revisited · Vitamin D and K2 taken together.'
+      },
+      {
+        heading: 'PDP opportunities',
+        text: 'Jarro-Dophilus EPS · MagMind · Vitamin D3 + K2.'
+      }
+    ],
+    publishedBy: 'abubakar',
+    publishedAt: 'Jul 20 09:00',
+    unpublishedAt: null,
+    notifiedAt: null
+  },
+  {
+    id: 'PUB-0028',
+    outputId: 'OUT-2803',
+    versionId: 'OV-2803-1',
+    version: 1,
+    orgId: 'org-jarrow',
+    type: 'Trend intelligence brief',
+    title: 'Week of May 28 — early signals archive',
+    summary: 'An early look at the postbiotic vocabulary shift, months before it became a recurring theme in later briefs.',
+    body: [
+      {
+        heading: 'Three things to know',
+        text: 'An early look at the postbiotic vocabulary shift, months before it became a recurring theme in later briefs.'
+      }
+    ],
+    publishedBy: 'abubakar',
+    publishedAt: 'Jun 01 08:00',
+    unpublishedAt: null,
+    notifiedAt: null
+  },
+  {
+    id: 'PUB-0025',
+    outputId: 'OUT-2802',
+    versionId: 'OV-2802-1',
+    version: 1,
+    orgId: 'org-jarrow',
+    type: 'Research alert',
+    title: 'Postbiotic heat-killed Lactobacillus preparations and metabolic markers',
+    summary: 'A systematic review reports objective metabolic markers rather than symptom self-report, across a range of postbiotic preparations.',
+    body: [
+      {
+        heading: 'In plain language',
+        text: 'A systematic review of postbiotic preparations reports objective metabolic markers rather than symptom self-report, across a range of preparations.'
+      },
+      {
+        heading: 'Limitations',
+        text: 'Included studies define “postbiotic” inconsistently, which limits how far the pooled result can be generalised.'
+      }
+    ],
+    publishedBy: 'abubakar',
+    publishedAt: 'May 05 08:00',
+    unpublishedAt: null,
+    notifiedAt: null
+  },
+  {
     id: 'PUB-0036',
     outputId: 'OUT-3071',
     versionId: 'OV-3071-2',
@@ -221,9 +432,13 @@ export function deliveriesForOrg(orgId: string | null): DeliveryRow[] {
 
 const notifications: PortalNotification[] = [
   { id: 'N-511', orgId: 'org-jarrow', publicationId: 'PUB-0042', subject: 'New research alert: creatine and working memory', sentAt: 'Today 08:15', channel: 'email', read: false },
+  { id: 'N-520', orgId: 'org-jarrow', publicationId: 'PUB-0046', subject: 'Trend brief — week of Sep 21', sentAt: 'Sep 20 08:00', channel: 'email', read: false },
+  { id: 'N-518', orgId: 'org-jarrow', publicationId: 'PUB-0044', subject: 'New research alert: vitamin D and K2 co-dosing', sentAt: 'Sep 17 10:30', channel: 'email', read: true },
+  { id: 'N-516', orgId: 'org-jarrow', publicationId: 'PUB-0043', subject: 'New product memo: berberine portfolio gap', sentAt: 'Sep 10 14:00', channel: 'email', read: false },
   { id: 'N-509', orgId: 'org-jarrow', publicationId: 'PUB-0041', subject: 'Your September content queue is ready', sentAt: 'Sep 05 09:10', channel: 'email', read: true },
   { id: 'N-507', orgId: 'org-jarrow', publicationId: 'PUB-0039', subject: 'Trend brief — week of Sep 7', sentAt: 'Sep 08 08:00', channel: 'email', read: true },
-  { id: 'N-505', orgId: 'org-jarrow', publicationId: null, subject: 'A previously issued brief was withdrawn and reissued', sentAt: 'Sep 02 14:30', channel: 'email', read: true }
+  { id: 'N-505', orgId: 'org-jarrow', publicationId: null, subject: 'A previously issued brief was withdrawn and reissued', sentAt: 'Sep 02 14:30', channel: 'email', read: true },
+  { id: 'N-503', orgId: 'org-jarrow', publicationId: 'PUB-0038', subject: 'Visibility benchmark — August', sentAt: 'Aug 28 09:00', channel: 'email', read: true }
 ];
 
 export function notificationsForOrg(orgId: string | null): PortalNotification[] {
@@ -233,9 +448,3 @@ export function notificationsForOrg(orgId: string | null): PortalNotification[] 
   return notifications.filter((n) => n.orgId === orgId);
 }
 
-export const notificationPreferences = [
-  { id: 'pub', label: 'When an output is published to us', detail: 'Sent to every member of the organisation.', enabled: true, locked: true },
-  { id: 'withdraw', label: 'When a published output is withdrawn', detail: 'Cannot be turned off — withdrawals always notify.', enabled: true, locked: true },
-  { id: 'digest', label: 'Weekly summary of what was delivered', detail: 'One message on Monday morning.', enabled: true, locked: false },
-  { id: 'billing', label: 'Subscription and invoice notices', detail: 'Org Admins only.', enabled: false, locked: false }
-];

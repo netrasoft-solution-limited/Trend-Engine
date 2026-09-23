@@ -24,10 +24,12 @@ import { CheckEmail } from './portal/pages/CheckEmail';
 import { VerifyEmail } from './portal/pages/VerifyEmail';
 import { Dashboard } from './portal/pages/Dashboard';
 import { Delivery } from './portal/pages/Delivery';
+import { Feedback } from './portal/pages/Feedback';
 import { Notifications } from './portal/pages/Notifications';
 import { OutputDetail } from './portal/pages/OutputDetail';
 import { Subscription } from './portal/pages/Subscription';
 import { Team } from './portal/pages/Team';
+import { TeamMemberDetail } from './portal/pages/TeamMemberDetail';
 
 /**
  * Two planes, one codebase — Arch §2.1.
@@ -44,7 +46,7 @@ import { Team } from './portal/pages/Team';
  * no storage, so there is no code path from a session on one plane into the
  * other, only two independent "are you signed in here" checks.
  *
- * `portalRole`/`opsRole` are TEST-ONLY bypasses for `routes.manifest.ts` and
+ * `portalRole`/`opsRole`/`portalEmptyOrg` are TEST-ONLY bypasses for `routes.manifest.ts` and
  * `scripts/check-render.mjs`, which need to render the authenticated screens
  * without driving a real login/MFA flow. Nothing else should ever pass them —
  * `App.tsx` never does, so a real visit always goes through the real gate.
@@ -52,7 +54,11 @@ import { Team } from './portal/pages/Team';
  * The tree lives apart from `App` so the smoke test can mount it under a
  * MemoryRouter rather than re-declaring the routes and drifting from this file.
  */
-export function AppRoutes({ portalRole, opsRole }: { portalRole?: OrgRole; opsRole?: OperatorRole } = {}) {
+export function AppRoutes({
+  portalRole,
+  opsRole,
+  portalEmptyOrg
+}: { portalRole?: OrgRole; opsRole?: OperatorRole; portalEmptyOrg?: boolean } = {}) {
   return (
     <Routes>
       <Route
@@ -99,14 +105,16 @@ export function AppRoutes({ portalRole, opsRole }: { portalRole?: OrgRole; opsRo
               <Route
               path="*"
               element={
-              <RequirePortalSession testRole={portalRole}>
+              <RequirePortalSession testRole={portalRole} testEmptyOrg={portalEmptyOrg}>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="output/:id" element={<OutputDetail />} />
                     <Route path="delivery" element={<Delivery />} />
                     <Route path="notifications" element={<Notifications />} />
                     <Route path="team" element={<Team />} />
+                    <Route path="team/:memberId" element={<TeamMemberDetail />} />
                     <Route path="subscription" element={<Subscription />} />
+                    <Route path="feedback" element={<Feedback />} />
                     <Route path="*" element={<Navigate to="/portal" replace />} />
                   </Routes>
                 </RequirePortalSession>

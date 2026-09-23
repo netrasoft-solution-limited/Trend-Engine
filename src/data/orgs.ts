@@ -19,7 +19,8 @@ export const organizations: Organization[] = [
     seats: 4,
     publishedOutputs: 3,
     lastPortalLogin: 'Today 09:02',
-    note: 'Launch tenant. Weekly trend brief plus content briefs on a three-per-week cadence.'
+    note: 'Launch tenant. Weekly trend brief plus content briefs on a three-per-week cadence.',
+    orgCreatedAt: 'Jan 15, 2026'
   },
   {
     id: 'org-fixture-second',
@@ -32,7 +33,8 @@ export const organizations: Organization[] = [
     publishedOutputs: 1,
     lastPortalLogin: null,
     note:
-      'PRD §2 architecture proof. Exists so CI can assert that one public signal scores differently per tenant and that private context never crosses. Not a live client.'
+      'PRD §2 architecture proof. Exists so CI can assert that one public signal scores differently per tenant and that private context never crosses. Not a live client.',
+    orgCreatedAt: 'Jan 15, 2026'
   },
   {
     id: 'org-fixture-domain',
@@ -45,7 +47,8 @@ export const organizations: Organization[] = [
     publishedOutputs: 0,
     lastPortalLogin: null,
     note:
-      'PRD §2 portability proof. Loads a non-supplement domain pack and completes an ingestion-to-output cycle without a core schema migration.'
+      'PRD §2 portability proof. Loads a non-supplement domain pack and completes an ingestion-to-output cycle without a core schema migration.',
+    orgCreatedAt: 'Jan 15, 2026'
   },
   {
     id: 'org-natures-way',
@@ -57,7 +60,21 @@ export const organizations: Organization[] = [
     seats: 0,
     publishedOutputs: 0,
     lastPortalLogin: null,
-    note: 'Prospective second tenant. No signed engagement — shown here to exercise the onboarding sequence.'
+    note: 'Prospective second tenant. No signed engagement — shown here to exercise the onboarding sequence.',
+    orgCreatedAt: 'Sep 18, 2026'
+  },
+  {
+    id: 'org-newco',
+    name: 'Newco Wellness',
+    clientId: 'newco-wellness',
+    domainPack: 'supplements@3.4.0',
+    status: 'onboarding',
+    isFixture: false,
+    seats: 1,
+    publishedOutputs: 0,
+    lastPortalLogin: 'Today 09:02',
+    note: 'Signed up through the self-serve mock flow (PRD §4.2 marks that flow deferred — this fixture is what the design explores ahead of that approval).',
+    orgCreatedAt: 'Sep 22, 2026'
   }
 ];
 

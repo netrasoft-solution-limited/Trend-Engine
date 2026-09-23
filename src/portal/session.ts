@@ -21,6 +21,7 @@ import { OrgRole } from '../types';
 export interface PortalSession {
   orgId: string;
   orgName: string;
+  userId: string;
   userName: string;
   email: string;
   role: OrgRole;

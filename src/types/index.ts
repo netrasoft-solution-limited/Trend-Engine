@@ -85,6 +85,10 @@ export interface Organization {
   publishedOutputs: number;
   lastPortalLogin: string | null;
   note: string;
+  /** When the tenant boundary was created — PRD §5 principle 9. Drives the
+   * portal's onboarding checklist: an organisation stops being "new" 30 days
+   * after this date, independent of `status`. */
+  orgCreatedAt: string;
 }
 
 export interface OrgUser {

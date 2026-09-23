@@ -8,8 +8,22 @@ import { Login } from '../pages/Login';
 
 /** Test-only bypass sessions — see `testRole` below. Never reachable from a real login. */
 const TEST_SESSIONS: Record<OrgRole, PortalSession> = {
-  'Org Admin': { orgId: 'org-jarrow', orgName: 'Jarrow Formulas', userName: 'Dana Whitfield', email: 'dana@jarrow.example', role: 'Org Admin', logout: () => undefined },
-  'Org Viewer': { orgId: 'org-jarrow', orgName: 'Jarrow Formulas', userName: 'Priya Raman', email: 'priya@jarrow.example', role: 'Org Viewer', logout: () => undefined }
+  'Org Admin': { orgId: 'org-jarrow', orgName: 'Jarrow Formulas', userId: 'ou-1', userName: 'Dana Whitfield', email: 'dana@jarrow.example', role: 'Org Admin', logout: () => undefined },
+  'Org Viewer': { orgId: 'org-jarrow', orgName: 'Jarrow Formulas', userId: 'ou-2', userName: 'Priya Raman', email: 'priya@jarrow.example', role: 'Org Viewer', logout: () => undefined }
+};
+
+/** Same idea as `TEST_SESSIONS`, for the one organisation with nothing
+ * published yet — the render smoke test has no other way to reach the
+ * empty-organisation state, since `org-newco` isn't one of the two roles
+ * `testRole` selects between. */
+const EMPTY_ORG_TEST_SESSION: PortalSession = {
+  orgId: 'org-newco',
+  orgName: 'Newco Wellness',
+  userId: 'ou-3',
+  userName: 'Jordan Lee',
+  email: 'jordan@newco.example',
+  role: 'Org Admin',
+  logout: () => undefined
 };
 
 /**
@@ -23,15 +37,29 @@ const TEST_SESSIONS: Record<OrgRole, PortalSession> = {
  * login. Production (`App.tsx`) never passes it, so a real, signed-out visit
  * always hits the branch below that renders `Login` in place.
  */
-export function RequirePortalSession({ children, testRole }: { children: React.ReactNode; testRole?: OrgRole }) {
+export function RequirePortalSession({
+  children,
+  testRole,
+  testEmptyOrg
+}: {
+  children: React.ReactNode;
+  testRole?: OrgRole;
+  /** Test-only, like `testRole` — renders as the empty-organisation fixture instead. */
+  testEmptyOrg?: boolean;
+}) {
   const auth = usePortalAuth();
   const navigate = useNavigate();
+  const bypassed = testRole || testEmptyOrg;
 
   useEffect(() => {
-    if (!testRole && auth.status === 'signed-out') {
+    if (!bypassed && auth.status === 'signed-out') {
       navigate('/portal/login', { replace: true });
     }
-  }, [testRole, auth.status, navigate]);
+  }, [bypassed, auth.status, navigate]);
+
+  if (testEmptyOrg) {
+    return <PortalShell session={EMPTY_ORG_TEST_SESSION}>{children}</PortalShell>;
+  }
 
   if (testRole) {
     return <PortalShell session={TEST_SESSIONS[testRole]}>{children}</PortalShell>;
@@ -47,6 +75,7 @@ export function RequirePortalSession({ children, testRole }: { children: React.R
   const session: PortalSession = {
     orgId: auth.user.orgId,
     orgName: auth.user.orgName,
+    userId: auth.user.id,
     userName: auth.user.name,
     email: auth.user.email,
     role: auth.user.role,

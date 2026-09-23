@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AlertTriangleIcon, CheckCircle2Icon, MailPlusIcon, MoreVerticalIcon, RotateCcwIcon, UsersIcon } from 'lucide-react';
 import { AdminOnly } from '../AdminOnly';
 import { ConfirmPanel } from '../../components/ConfirmPanel';
@@ -16,7 +17,7 @@ type Notice = { tone: 'ok' | 'bad'; text: string };
 type Confirming = { member: TeamMember; kind: 'remove' | 'cancel-invite' };
 
 export function Team() {
-  const { orgId, email: currentUserEmail } = usePortalSession();
+  const { orgId, userName, email: currentUserEmail } = usePortalSession();
 
   // Seeded synchronously — see the note on `teamService.listMembersSnapshot`.
   // `null` only ever appears after an explicit retry, which is where the
@@ -52,7 +53,7 @@ export function Team() {
     setInviteStatus('submitting');
     setInviteError('');
     try {
-      const created = await teamService.inviteMember({ orgId, email: inviteEmail, role: inviteRole });
+      const created = await teamService.inviteMember({ orgId, email: inviteEmail, role: inviteRole, invitedByName: userName });
       setMembers((prev) => (prev ? [...prev, created] : [created]));
       setInviting(false);
       setInviteEmail('');
@@ -269,25 +270,30 @@ export function Team() {
                 return (
                   <Fragment key={m.id}>
                     <li className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-shell text-xs font-bold text-ink-soft">
-                        {m.name.split(' ').map((n) => n[0]).join('')}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                          {m.name}
-                          {m.isSelf &&
-                        <span className="rounded-full bg-shell px-1.5 py-0.5 text-2xs font-semibold text-ink-mute">
-                              You
-                            </span>
-                        }
-                        </p>
-                        <p className="text-2xs text-ink-mute">{m.email}</p>
-                      </div>
-                      <span className="shrink-0 text-xs font-medium text-ink-soft">{m.role}</span>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-semibold ${STATUS_TONES[m.status]}`}>
-                        {m.status}
-                      </span>
-                      <span className="w-24 shrink-0 text-right text-2xs text-ink-mute">{m.lastLogin ?? 'never'}</span>
+                      <Link
+                      to={`/portal/team/${m.id}`}
+                      className="flex min-w-0 flex-1 items-center gap-4 rounded-lg transition-colors duration-150 hover:bg-shell/60">
+
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-shell text-xs font-bold text-ink-soft">
+                          {m.name.split(' ').map((n) => n[0]).join('')}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                            {m.name}
+                            {m.isSelf &&
+                          <span className="rounded-full bg-shell px-1.5 py-0.5 text-2xs font-semibold text-ink-mute">
+                                You
+                              </span>
+                          }
+                          </p>
+                          <p className="text-2xs text-ink-mute">{m.email}</p>
+                        </div>
+                        <span className="shrink-0 text-xs font-medium text-ink-soft">{m.role}</span>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-2xs font-semibold ${STATUS_TONES[m.status]}`}>
+                          {m.status}
+                        </span>
+                        <span className="w-24 shrink-0 text-right text-2xs text-ink-mute">{m.lastLogin ?? 'never'}</span>
+                      </Link>
 
                       <div className="relative shrink-0">
                         <button
