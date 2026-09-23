@@ -9,6 +9,7 @@
  *
  * Run with `npm run boundary`, or `npm run check` for the full set.
  */
+import { build } from 'esbuild';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -64,9 +65,10 @@ check('publications.ts does not import the output layer', () => {
   }
 });
 
-// ── PRD §6.3 ────────────────────────────────────────────────────────────────
-// The weights drifted from the PRD once already. Assert them so it is a build
-// failure rather than something a reader has to notice.
+// ── PRD §6.3 / Arch §8.2 ────────────────────────────────────────────────────
+// Executed, not text-scanned: `signals.ts` and `clientScores.ts` are bundled
+// and imported for real, so these checks read the same objects the UI does
+// and cannot drift out of sync with either file's formatting.
 const EXPECTED_DOMAIN_WEIGHTS = {
   Momentum: 0.25,
   Acceleration: 0.2,
@@ -77,6 +79,19 @@ const EXPECTED_DOMAIN_WEIGHTS = {
   Recency: 0.05
 };
 
+// PRD §6.3: confidence's own components — evidence quantity, independent
+// sources, extraction certainty, transcript completeness, authority,
+// contradiction ratio, and stability across runs.
+const EXPECTED_CONFIDENCE_WEIGHTS = {
+  'Evidence quantity': 0.2,
+  'Independent sources': 0.2,
+  'Extraction certainty': 0.15,
+  'Transcript completeness': 0.15,
+  Authority: 0.15,
+  'Contradiction ratio': 0.1,
+  'Stability across runs': 0.05
+};
+
 const EXPECTED_CLIENT_WEIGHTS = {
   'Domain signal': 0.6,
   'Asset / offer relevance': 0.2,
@@ -84,77 +99,105 @@ const EXPECTED_CLIENT_WEIGHTS = {
   'Strategic priority': 0.1
 };
 
-const signalsSource = readFileSync(join(src, 'data', 'signals.ts'), 'utf8');
-
-function componentWeights(source) {
-  const found = new Map();
-  const pattern = /\{\s*label:\s*'([^']+)',\s*value:\s*(\d+),\s*weight:\s*([\d.]+)/g;
-  let match;
-  while ((match = pattern.exec(source)) !== null) {
-    const [, label, , weight] = match;
-    if (!found.has(label)) found.set(label, new Set());
-    found.get(label).add(Number(weight));
-  }
-  return found;
-}
-
-check('domain and client weights match PRD §6.3', () => {
-  const found = componentWeights(signalsSource);
-  const expected = { ...EXPECTED_DOMAIN_WEIGHTS, ...EXPECTED_CLIENT_WEIGHTS };
-  const wrong = [];
-
-  for (const [label, weights] of found) {
-    if (!(label in expected)) {
-      wrong.push(`unknown component "${label}"`);
-      continue;
-    }
-    for (const weight of weights) {
-      if (weight !== expected[label]) {
-        wrong.push(`${label}: found ${weight}, expected ${expected[label]}`);
-      }
-    }
-  }
-
-  for (const label of Object.keys(expected)) {
-    if (!found.has(label)) wrong.push(`missing component "${label}"`);
-  }
-
-  if (wrong.length) {
-    throw new Error(wrong.join('\n       '));
-  }
+const bundle = await build({
+  stdin: {
+    contents: `
+      export { signals } from './src/data/signals';
+      export { clientSignalScores } from './src/data/clientScores';
+    `,
+    // fileURLToPath, not .pathname — the project path may contain spaces.
+    resolveDir: root,
+    loader: 'ts'
+  },
+  bundle: true,
+  write: false,
+  format: 'esm',
+  platform: 'node',
+  logLevel: 'silent'
 });
 
-check('every signal headline matches its own weighted components', () => {
-  // Each signal block: domainScore, then its breakdown array.
-  const blocks = signalsSource.split(/\n  \{\n    id: 'SIG-/).slice(1);
+const { signals, clientSignalScores } = await import(
+  `data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`
+);
+
+/** Checks every component in `items[].[componentsKey]` against `expected`, by label. */
+function checkWeights(items, componentsKey, expected, idOf) {
   const wrong = [];
-
-  for (const block of blocks) {
-    const id = `SIG-${block.slice(0, 4)}`;
-    const headline = Number(/domainScore:\s*(\d+)/.exec(block)?.[1]);
-    const breakdown = block.slice(
-      block.indexOf('breakdown: ['),
-      block.indexOf('clientBreakdown: [')
-    );
-
-    let total = 0;
-    const pattern = /value:\s*(\d+),\s*weight:\s*([\d.]+)/g;
-    let match;
-    while ((match = pattern.exec(breakdown)) !== null) {
-      total += Number(match[1]) * Number(match[2]);
+  for (const item of items) {
+    const found = new Set(item[componentsKey].map((c) => c.label));
+    for (const component of item[componentsKey]) {
+      if (!(component.label in expected)) {
+        wrong.push(`${idOf(item)}: unknown component "${component.label}"`);
+      } else if (component.weight !== expected[component.label]) {
+        wrong.push(`${idOf(item)}: ${component.label} weight ${component.weight}, expected ${expected[component.label]}`);
+      }
     }
-
-    if (Math.round(total) !== headline) {
-      wrong.push(`${id}: headline ${headline}, components sum to ${Math.round(total)}`);
+    for (const label of Object.keys(expected)) {
+      if (!found.has(label)) wrong.push(`${idOf(item)}: missing component "${label}"`);
     }
   }
+  if (wrong.length) throw new Error(wrong.join('\n       '));
+}
 
+check('domain weights match PRD §6.3', () => {
+  checkWeights(signals, 'breakdown', EXPECTED_DOMAIN_WEIGHTS, (s) => s.id);
+});
+
+check('confidence weights match PRD §6.3', () => {
+  checkWeights(signals, 'confidenceBreakdown', EXPECTED_CONFIDENCE_WEIGHTS, (s) => s.id);
+});
+
+check('client weights match PRD §6.3', () => {
+  checkWeights(clientSignalScores, 'clientBreakdown', EXPECTED_CLIENT_WEIGHTS, (c) => `${c.signalId}/${c.orgId}`);
+});
+
+/** Arch §8.2: a headline score that cannot be reconstructed from its own persisted components is not explainable. */
+function checkReconciliation(items, componentsKey, headlineKey, idOf) {
+  const wrong = [];
+  for (const item of items) {
+    const total = Math.round(item[componentsKey].reduce((sum, c) => sum + c.value * c.weight, 0));
+    if (total !== item[headlineKey]) {
+      wrong.push(`${idOf(item)}: headline ${item[headlineKey]}, components sum to ${total}`);
+    }
+  }
   if (wrong.length) {
     throw new Error(
       'Arch §8.2 — a headline score that cannot be reconstructed from its own ' +
         'components is not explainable.\n       ' +
         wrong.join('\n       ')
     );
+  }
+}
+
+check('every signal domain score matches its own weighted components', () => {
+  checkReconciliation(signals, 'breakdown', 'domainScore', (s) => s.id);
+});
+
+check('every signal confidence matches its own weighted components', () => {
+  checkReconciliation(signals, 'confidenceBreakdown', 'confidence', (s) => s.id);
+});
+
+check('every client score matches its own weighted components', () => {
+  checkReconciliation(clientSignalScores, 'clientBreakdown', 'clientFit', (c) => `${c.signalId}/${c.orgId}`);
+});
+
+// PRD §14: "one public signal receives different scores for Jarrow and the
+// second-client fixture" — the architecture proof this fixture exists for.
+check('the second-tenant fixture scores at least one shared signal differently than Jarrow', () => {
+  const shared = signals.filter((s) =>
+    clientSignalScores.some((c) => c.signalId === s.id && c.orgId === 'org-jarrow') &&
+    clientSignalScores.some((c) => c.signalId === s.id && c.orgId === 'org-fixture-second')
+  );
+  if (shared.length === 0) {
+    throw new Error('No signal has both an org-jarrow and an org-fixture-second ClientSignalScore to compare.');
+  }
+  const identical = shared.filter((s) => {
+    const jarrow = clientSignalScores.find((c) => c.signalId === s.id && c.orgId === 'org-jarrow');
+    const fixture = clientSignalScores.find((c) => c.signalId === s.id && c.orgId === 'org-fixture-second');
+    return jarrow.clientFit === fixture.clientFit;
+  });
+  if (identical.length === shared.length) {
+    throw new Error(`${identical.map((s) => s.id).join(', ')}: identical clientFit for both tenants — tenancy scoring proves nothing if the numbers match.`);
   }
 });
 

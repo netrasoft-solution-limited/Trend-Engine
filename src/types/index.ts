@@ -144,12 +144,17 @@ export interface EvidenceRow {
   caveat: string;
 }
 
-/** Arch §8.2: the provenance triple that makes multi-tenancy and multi-domain auditable. */
+/**
+ * Arch §8.2: the provenance pair that makes multi-domain auditable.
+ *
+ * Domain-level only — a Signal is shared (Arch's L4, no tenant column), so
+ * nothing tenant-scoped belongs here. The per-tenant equivalent
+ * (`clientProfileVersion`) lives on `ClientSignalScore` instead.
+ */
 export interface ScoreProvenance {
   modelVersion: string;
   promptVersion: string;
   domainPackVersion: string;
-  clientProfileVersion: string;
   baseline: string;
   sourceCount: number;
   creatorCount: number;
@@ -157,6 +162,11 @@ export interface ScoreProvenance {
 
 export type SuggestedAction = 'approve deep dive' | 'watch' | 'validate' | 'merge';
 
+/**
+ * Arch's L4: shared, no tenant. A Signal exists once regardless of how many
+ * organisations it is scored for — see `ClientSignalScore` for the per-tenant
+ * view of the same signal.
+ */
 export interface Signal {
   id: string;
   title: string;
@@ -164,8 +174,6 @@ export interface Signal {
   state: SignalState;
   /** Axis 1 — is this moving in the category? Shared by all tenants. */
   domainScore: number;
-  /** Axis 2 — does this matter to THIS client? 60/20/10/10 per PRD §6.3. */
-  clientFit: number;
   /**
    * Axis 3 — how much should we trust this?
    * Arch §8.1: kept orthogonal to importance on purpose. Conflating the two is
@@ -176,13 +184,28 @@ export interface Signal {
   firstSeen: string;
   routes: string[];
   breakdown: ScoreComponent[];
-  clientBreakdown: ScoreComponent[];
+  /** Arch §8.2: confidence is a score like any other — persisted components, not a bare number. */
+  confidenceBreakdown: ScoreComponent[];
   provenance: ScoreProvenance;
   evidence: EvidenceRow[];
-  clientConnection: string;
   /** PRD §6.3: contradictions are retained, never discarded. */
   contradictions: string[];
   claimsFlags: string[];
+}
+
+/**
+ * Arch's L5: tenant-scoped. The client-rank view of one Signal for exactly one
+ * organisation — Axis 2, "does this matter to THIS client?" (60/20/10/10 per
+ * PRD §6.3). The same signal can, and for the second-tenant architecture-proof
+ * fixture must, carry a different `ClientSignalScore` per organisation.
+ */
+export interface ClientSignalScore {
+  signalId: string;
+  orgId: string;
+  clientFit: number;
+  clientBreakdown: ScoreComponent[];
+  clientConnection: string;
+  clientProfileVersion: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -353,6 +376,9 @@ export interface OutputVersion {
   author: string;
   summary: string;
   state: OutputState;
+  /** PRD §6.9: approval signs off on this exact version — recorded here, not inferred from `state` alone. */
+  approvedBy: string | null;
+  approvedAt: string | null;
 }
 
 /**

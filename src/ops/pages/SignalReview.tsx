@@ -13,6 +13,7 @@ import { Panel, PanelHeader } from '../../components/Panel';
 import { ScoreBar } from '../../components/ScoreBar';
 import { StateChip } from '../../components/StateChip';
 import { SCORE_AXES, signals, weightedTotal } from '../../data/signals';
+import { clientSignalScores, clientScoreFor } from '../../data/clientScores';
 import { outputTypes } from '../../data/outputs';
 import { SignalState } from '../../types';
 
@@ -28,6 +29,7 @@ export function SignalReview() {
   const { id } = useParams();
   const navigate = useNavigate();
   const signal = signals.find((s) => s.id === id) ?? signals[0];
+  const clientScore = clientScoreFor(signal.id, 'org-jarrow') ?? clientSignalScores[0];
 
   const [state, setState] = useState<SignalState>(signal.state);
   const [openComponent, setOpenComponent] = useState<string | null>(signal.breakdown[0].label);
@@ -280,7 +282,7 @@ export function SignalReview() {
                         {a.key === 'domain' ?
                     signal.domainScore :
                     a.key === 'client' ?
-                    signal.clientFit :
+                    clientScore.clientFit :
                     signal.confidence}
                       </span>
                     </button>
@@ -296,7 +298,7 @@ export function SignalReview() {
           </p>
 
           <ul className="divide-y divide-line">
-            {(axis === 'domain' ? signal.breakdown : signal.clientBreakdown).map((c) => {
+            {(axis === 'domain' ? signal.breakdown : clientScore.clientBreakdown).map((c) => {
               const open = openComponent === c.label;
               return (
                 <li key={c.label}>
@@ -330,7 +332,7 @@ export function SignalReview() {
             {[
             ['Baseline', signal.provenance.baseline],
             ['Domain pack', signal.provenance.domainPackVersion],
-            ['Client profile', signal.provenance.clientProfileVersion],
+            ['Client profile', clientScore.clientProfileVersion],
             ['Model', signal.provenance.modelVersion],
             ['Prompt', signal.provenance.promptVersion],
             ['Sources / creators', `${signal.provenance.sourceCount} / ${signal.provenance.creatorCount}`]].
@@ -346,7 +348,7 @@ export function SignalReview() {
         <div className="space-y-3">
           <Panel>
             <PanelHeader title="Jarrow connection" subtitle="Portfolio and category exposure" />
-            <p className="px-5 py-4 text-xs leading-relaxed text-ink-soft">{signal.clientConnection}</p>
+            <p className="px-5 py-4 text-xs leading-relaxed text-ink-soft">{clientScore.clientConnection}</p>
           </Panel>
 
           <Panel className="border-warn/30">

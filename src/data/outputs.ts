@@ -214,10 +214,15 @@ export const internalOnlyFields = [
 
 /** Version history is internal. PRD §6.9: only one published version is visible to a tenant at a time. */
 export const outputVersions: OutputVersion[] = [
-  { id: 'OV-3120-3', version: 3, createdAt: 'Today 10:42', author: 'abubakar', summary: 'Tightened the guardrails section; added the population qualifier', state: 'draft' },
-  { id: 'OV-3120-2', version: 2, createdAt: 'Yesterday 16:11', author: 'abubakar', summary: 'Rewrote the angle after the evidence check', state: 'archived' },
-  { id: 'OV-3120-1', version: 1, createdAt: 'Sep 18 09:30', author: 'system', summary: 'Generated from SIG-2041', state: 'archived' }
+  { id: 'OV-3120-3', version: 3, createdAt: 'Today 10:42', author: 'abubakar', summary: 'Tightened the guardrails section; added the population qualifier', state: 'draft', approvedBy: null, approvedAt: null },
+  { id: 'OV-3120-2', version: 2, createdAt: 'Yesterday 16:11', author: 'abubakar', summary: 'Rewrote the angle after the evidence check', state: 'archived', approvedBy: null, approvedAt: null },
+  { id: 'OV-3120-1', version: 1, createdAt: 'Sep 18 09:30', author: 'system', summary: 'Generated from SIG-2041', state: 'archived', approvedBy: null, approvedAt: null }
 ];
+
+/** PRD §6.9: the operator approves an exact version — never a hardcoded "current" literal. */
+export function latestVersion(versions: OutputVersion[]): number {
+  return versions.reduce((max, v) => Math.max(max, v.version), 0);
+}
 
 /**
  * Arch §9.2: health/scientific outputs require recorded expert sign-off BEFORE

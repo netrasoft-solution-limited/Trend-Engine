@@ -15,9 +15,13 @@ import { Panel, PanelHeader } from '../../components/Panel';
 import { ScoreBar } from '../../components/ScoreBar';
 import { StateChip } from '../../components/StateChip';
 import { digest, signals, sourceHealthSnapshot } from '../../data/signals';
+import { clientScoreFor } from '../../data/clientScores';
 import { SuggestedAction } from '../../types';
 
 const ACTIONS: SuggestedAction[] = ['approve deep dive', 'watch', 'validate', 'merge'];
+
+/** Triage reviews Jarrow's queue. A tenant selector would widen this later — Arch §5.3. */
+const JARROW_ORG_ID = 'org-jarrow';
 
 type SortKey = 'domainScore' | 'clientFit' | 'confidence';
 
@@ -44,10 +48,10 @@ export function Triage() {
 
   const rows = useMemo(() => {
     return signals.
-    filter((s) => routeFilter === 'All routes' ? true : s.routes.includes(routeFilter)).
-    filter((s) => actionFilter === 'All actions' ? true : (overrides[s.id] ?? s.suggestedAction) === actionFilter).
-    slice().
-    sort((a, b) => b[sortKey] - a[sortKey]);
+    map((s) => ({ signal: s, clientFit: clientScoreFor(s.id, JARROW_ORG_ID)?.clientFit ?? 0 })).
+    filter(({ signal: s }) => routeFilter === 'All routes' ? true : s.routes.includes(routeFilter)).
+    filter(({ signal: s }) => actionFilter === 'All actions' ? true : (overrides[s.id] ?? s.suggestedAction) === actionFilter).
+    sort((a, b) => sortKey === 'clientFit' ? b.clientFit - a.clientFit : b.signal[sortKey] - a.signal[sortKey]);
   }, [sortKey, routeFilter, actionFilter, overrides]);
 
   return (
@@ -143,7 +147,7 @@ export function Triage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((s) => {
+              {rows.map(({ signal: s, clientFit }) => {
                 const open = expanded === s.id;
                 return (
                   <Fragment key={s.id}>
@@ -181,7 +185,7 @@ export function Triage() {
                         <ScoreBar value={s.domainScore} label={`${s.id} domain score`} />
                       </td>
                       <td className="py-3 pr-4">
-                        <ScoreBar value={s.clientFit} label={`${s.id} client fit`} />
+                        <ScoreBar value={clientFit} label={`${s.id} client fit`} />
                       </td>
                       <td className="py-3 pr-4 font-mono text-xs tabular-nums text-ink-soft">{s.confidence}</td>
                       <td className="py-3 pr-4">

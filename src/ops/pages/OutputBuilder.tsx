@@ -21,6 +21,7 @@ import {
   draftSections,
   expertReviews,
   internalOnlyFields,
+  latestVersion,
   outputTypes,
   outputVersions,
   recentOutputs,
@@ -44,7 +45,7 @@ const SEVERITY_TEXT: Record<string, string> = {
   note: 'text-ink-mute'
 };
 
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = latestVersion(outputVersions);
 
 interface GateEvent {
   at: string;

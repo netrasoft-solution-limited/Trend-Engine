@@ -1,8 +1,9 @@
 import { ScoreComponent, Signal } from '../types';
 
 /**
- * TENANT-SCOPED (L5). Every score here belongs to exactly one client profile
- * version and one domain pack version — see `provenance` on each signal.
+ * GLOBAL (L4). A Signal is shared — no tenant column. It exists once no matter
+ * how many organisations score it; see `data/clientScores.ts` for the
+ * per-tenant `ClientSignalScore` view of the same signal.
  *
  * Weights are fixed by PRD §6.3 and must sum to 1.00. They are exported so the
  * UI can assert against them rather than restating them in prose.
@@ -17,12 +18,20 @@ export const DOMAIN_WEIGHTS = {
   Recency: 0.05
 } as const;
 
-/** PRD §6.3: client rank = 60% domain signal + 20% asset relevance + 10% audience fit + 10% strategic priority. */
-export const CLIENT_WEIGHTS = {
-  'Domain signal': 0.6,
-  'Asset / offer relevance': 0.2,
-  'Audience fit': 0.1,
-  'Strategic priority': 0.1
+/**
+ * PRD §6.3: confidence is tracked separately from importance, considering
+ * evidence quantity, independent sources, extraction certainty, transcript
+ * completeness, authority, contradiction ratio, and stability across runs.
+ * Arch §8.2: persisted components, not a bare number, like every other score.
+ */
+export const CONFIDENCE_WEIGHTS = {
+  'Evidence quantity': 0.2,
+  'Independent sources': 0.2,
+  'Extraction certainty': 0.15,
+  'Transcript completeness': 0.15,
+  Authority: 0.15,
+  'Contradiction ratio': 0.1,
+  'Stability across runs': 0.05
 } as const;
 
 /** Arch §8.1: three axes, deliberately never collapsed into one number. */
@@ -66,7 +75,6 @@ export const signals: Signal[] = [
       'Long-form podcast hosts and clinical YouTube channels are moving creatine out of the sports-performance lane and into cognition, mood and healthy-aging conversations, largely for women over 40.',
     state: 'candidate',
     domainScore: 82,
-    clientFit: 82,
     confidence: 74,
     suggestedAction: 'approve deep dive',
     firstSeen: '11 days ago',
@@ -80,17 +88,19 @@ export const signals: Signal[] = [
       { label: 'Novelty', value: 66, weight: 0.1, note: 'Topic is known; the audience reframing is what is new' },
       { label: 'Recency', value: 94, weight: 0.05, note: 'Most recent qualifying evidence span: 2 days ago' }
     ],
-    clientBreakdown: [
-      { label: 'Domain signal', value: 82, weight: 0.6, note: 'Category-level score, shared across tenants' },
-      { label: 'Asset / offer relevance', value: 88, weight: 0.2, note: 'Creatine Monohydrate Powder in catalogue; adjacent cognition SKUs give a cross-sell path' },
-      { label: 'Audience fit', value: 94, weight: 0.1, note: 'Women 40+ healthy aging is Jarrow’s primary, highest-LTV audience' },
-      { label: 'Strategic priority', value: 55, weight: 0.1, note: 'Sports & recovery is a Tier 3 category — the cognition framing is what raises it' }
+    confidenceBreakdown: [
+      { label: 'Evidence quantity', value: 78, weight: 0.2, note: '28 evidence spans across three active routes in the 14-day window' },
+      { label: 'Independent sources', value: 75, weight: 0.2, note: '12 sources, 10 creators — no single source dominates' },
+      { label: 'Extraction certainty', value: 80, weight: 0.15, note: 'Clear framing in both podcast and clinician-channel transcripts' },
+      { label: 'Transcript completeness', value: 82, weight: 0.15, note: '82% transcript coverage on the YouTube route; 2 items metadata-only' },
+      { label: 'Authority', value: 70, weight: 0.15, note: 'Mix of clinician channels and practitioner commentary; only 2 RCTs behind it' },
+      { label: 'Contradiction ratio', value: 55, weight: 0.1, note: '3 retained contradictions, including an overstated effect-size framing' },
+      { label: 'Stability across runs', value: 60, weight: 0.05, note: 'Only 11 days old — one more collection window will firm this up' }
     ],
     provenance: {
       modelVersion: 'extract-v4.2',
       promptVersion: 'signal-scoring/2026-08-30',
       domainPackVersion: 'supplements@3.4.0',
-      clientProfileVersion: 'jarrow@2026-09-16',
       baseline: '28-day trailing category mean, creatine cluster',
       sourceCount: 12,
       creatorCount: 10
@@ -121,8 +131,6 @@ export const signals: Signal[] = [
         caveat: 'Absence of social evidence is not evidence of absence.'
       }
     ],
-    clientConnection:
-      'Jarrow carries Creatine Monohydrate Powder (SKU 1 of 1 in category) with no cognition-oriented positioning, education, or bundle. Adjacent portfolio: Citicoline (Cognizin), Neuro Optimizer, MagMind — all already positioned around cognition, giving a credible internal narrative and cross-sell path.',
     contradictions: [
       'The strongest cognition findings come from sleep-deprived or vegetarian populations and may not generalize to Jarrow’s buyer base.',
       'One covering podcast host overstates effect size relative to the cited meta-analysis; do not mirror that framing.',
@@ -137,7 +145,6 @@ export const signals: Signal[] = [
       'Sleep-focused content is shifting from "take magnesium" to explicit form-vs-form comparisons, with buyers asking which form to pick.',
     state: 'in review',
     domainScore: 74,
-    clientFit: 82,
     confidence: 69,
     suggestedAction: 'approve deep dive',
     firstSeen: '8 days ago',
@@ -151,17 +158,19 @@ export const signals: Signal[] = [
       { label: 'Novelty', value: 54, weight: 0.1, note: 'Recurring seasonal theme, not a new topic' },
       { label: 'Recency', value: 90, weight: 0.05, note: 'Latest span: 3 days ago' }
     ],
-    clientBreakdown: [
-      { label: 'Domain signal', value: 74, weight: 0.6, note: 'Category-level score, shared across tenants' },
-      { label: 'Asset / offer relevance', value: 96, weight: 0.2, note: 'MagMind and Magnesium Optimizer sit on opposite sides of exactly this comparison' },
-      { label: 'Audience fit', value: 92, weight: 0.1, note: 'Sleep and cognition framing lands on the primary 40+ audience' },
-      { label: 'Strategic priority', value: 95, weight: 0.1, note: 'Magnesium is a Tier 1 category' }
+    confidenceBreakdown: [
+      { label: 'Evidence quantity', value: 75, weight: 0.2, note: '26 qualifying spans across three routes' },
+      { label: 'Independent sources', value: 82, weight: 0.2, note: '9 distinct sources across three routes — the widest spread in this batch' },
+      { label: 'Extraction certainty', value: 65, weight: 0.15, note: 'Retail articles and forum threads are harder to extract cleanly than transcripts' },
+      { label: 'Transcript completeness', value: 75, weight: 0.15, note: 'Podcast and YouTube transcripts mostly complete' },
+      { label: 'Authority', value: 55, weight: 0.15, note: 'Several YouTube creators disclose affiliate relationships with competing brands' },
+      { label: 'Contradiction ratio', value: 50, weight: 0.1, note: 'Hosts answer the same buyer question inconsistently across shows' },
+      { label: 'Stability across runs', value: 65, weight: 0.05, note: '8 days old; one prior window of confirmation' }
     ],
     provenance: {
       modelVersion: 'extract-v4.2',
       promptVersion: 'signal-scoring/2026-08-30',
       domainPackVersion: 'supplements@3.4.0',
-      clientProfileVersion: 'jarrow@2026-09-16',
       baseline: '28-day trailing category mean, magnesium cluster',
       sourceCount: 9,
       creatorCount: 9
@@ -186,8 +195,6 @@ export const signals: Signal[] = [
         caveat: 'Rights basis for two domains is link-and-quote only.'
       }
     ],
-    clientConnection:
-      'Direct hit on Jarrow’s magnesium shelf: MagMind (magnesium L-threonate) and Magnesium Optimizer sit on opposite sides of exactly the comparison buyers are making. This is an education-gap opportunity, not a new-product opportunity.',
     contradictions: [
       'No head-to-head trial supports a ranked "best form" narrative for sleep.',
       'Positioning one Jarrow SKU above another risks cannibalizing the cheaper line.'
@@ -201,7 +208,6 @@ export const signals: Signal[] = [
       'Gut-health conversation is drifting from CFU-count marketing toward postbiotic and fermented-food framing.',
     state: 'watching',
     domainScore: 63,
-    clientFit: 73,
     confidence: 55,
     suggestedAction: 'watch',
     firstSeen: '19 days ago',
@@ -215,17 +221,19 @@ export const signals: Signal[] = [
       { label: 'Novelty', value: 81, weight: 0.1, note: 'Terminology is new to the mainstream buyer' },
       { label: 'Recency', value: 70, weight: 0.05, note: 'Latest span: 6 days ago' }
     ],
-    clientBreakdown: [
-      { label: 'Domain signal', value: 63, weight: 0.6, note: 'Category-level score, shared across tenants' },
-      { label: 'Asset / offer relevance', value: 90, weight: 0.2, note: 'Jarro-Dophilus family, S. boulardii, Fem-Dophilus — 14 SKUs exposed' },
-      { label: 'Audience fit', value: 78, weight: 0.1, note: 'Gut-health first-timers are a secondary audience' },
-      { label: 'Strategic priority', value: 92, weight: 0.1, note: 'Probiotics is Jarrow’s largest Tier 1 category' }
+    confidenceBreakdown: [
+      { label: 'Evidence quantity', value: 42, weight: 0.2, note: 'Only 17 mentions across two routes — the thinnest evidence base in this batch' },
+      { label: 'Independent sources', value: 50, weight: 0.2, note: '5 sources, 5 creators, 2 routes — one voice per source' },
+      { label: 'Extraction certainty', value: 68, weight: 0.15, note: 'Postbiotic terminology is used inconsistently across papers' },
+      { label: 'Transcript completeness', value: 70, weight: 0.15, note: 'Podcast transcripts complete; research is abstract-level only' },
+      { label: 'Authority', value: 60, weight: 0.15, note: 'Reasonable trial base, mostly non-US populations' },
+      { label: 'Contradiction ratio', value: 45, weight: 0.1, note: 'Flat week-over-week momentum retained as a live contradiction' },
+      { label: 'Stability across runs', value: 50, weight: 0.05, note: '19 days old with no acceleration — may be a vocabulary shift, not a trend' }
     ],
     provenance: {
       modelVersion: 'extract-v4.2',
       promptVersion: 'signal-scoring/2026-08-30',
       domainPackVersion: 'supplements@3.4.0',
-      clientProfileVersion: 'jarrow@2026-09-16',
       baseline: '28-day trailing category mean, gut-health cluster',
       sourceCount: 5,
       creatorCount: 5
@@ -244,8 +252,6 @@ export const signals: Signal[] = [
         caveat: 'Definitions of "postbiotic" are inconsistent between papers.'
       }
     ],
-    clientConnection:
-      'Touches Jarrow’s largest category — Jarro-Dophilus family, Saccharomyces boulardii, Fem-Dophilus. Current packaging leads with CFU counts, which this trend actively devalues. Watch rather than act: a reposition here is expensive.',
     contradictions: [
       'Momentum has not accelerated for two consecutive windows — may be a vocabulary shift, not a demand shift.',
       'Devaluing CFU counts undercuts existing Jarrow packaging claims already in market.'
@@ -259,7 +265,6 @@ export const signals: Signal[] = [
       'Renewed berberine interest paired with a visible practitioner backlash on interaction and liver-safety grounds.',
     state: 'candidate',
     domainScore: 74,
-    clientFit: 55,
     confidence: 81,
     suggestedAction: 'validate',
     firstSeen: '6 days ago',
@@ -273,17 +278,19 @@ export const signals: Signal[] = [
       { label: 'Novelty', value: 38, weight: 0.1, note: 'Recycled 2023 narrative' },
       { label: 'Recency', value: 96, weight: 0.05, note: 'Latest span: 1 day ago' }
     ],
-    clientBreakdown: [
-      { label: 'Domain signal', value: 74, weight: 0.6, note: 'Category-level score, shared across tenants' },
-      { label: 'Asset / offer relevance', value: 12, weight: 0.2, note: 'No berberine SKU in the Jarrow catalogue' },
-      { label: 'Audience fit', value: 45, weight: 0.1, note: 'Weight-management framing sits outside the primary audiences' },
-      { label: 'Strategic priority', value: 40, weight: 0.1, note: 'Defensive education value only — not a priority category' }
+    confidenceBreakdown: [
+      { label: 'Evidence quantity', value: 88, weight: 0.2, note: '31 mentions in 14 days — the highest volume in this batch' },
+      { label: 'Independent sources', value: 70, weight: 0.2, note: 'Concentrated in 3 large channels rather than a wide creator base' },
+      { label: 'Extraction certainty', value: 85, weight: 0.15, note: 'Promote/debunk framing is explicit and easy to extract' },
+      { label: 'Transcript completeness', value: 90, weight: 0.15, note: 'High-reach YouTube content is consistently well-captioned' },
+      { label: 'Authority', value: 75, weight: 0.15, note: 'Large channels and consumer press, mixed independent authority' },
+      { label: 'Contradiction ratio', value: 70, weight: 0.1, note: 'Split sentiment is itself the well-documented finding, not an extraction gap' },
+      { label: 'Stability across runs', value: 90, weight: 0.05, note: 'Latest span 1 day ago; the backlash pattern is holding across runs' }
     ],
     provenance: {
       modelVersion: 'extract-v4.2',
       promptVersion: 'signal-scoring/2026-08-30',
       domainPackVersion: 'supplements@3.4.0',
-      clientProfileVersion: 'jarrow@2026-09-16',
       baseline: '28-day trailing category mean, metabolic cluster',
       sourceCount: 8,
       creatorCount: 6
@@ -308,8 +315,6 @@ export const signals: Signal[] = [
         caveat: 'Abstract-level only; requires scientific review before any claim language.'
       }
     ],
-    clientConnection:
-      'Jarrow has no berberine SKU. This is a product-opportunity or defensive-education question, not a content-brief question.',
     contradictions: [
       'The framing that is driving reach ("nature’s Ozempic") is exactly the framing Jarrow cannot legally or ethically use.',
       'Drug-interaction profile makes this a safety-review item before any consumer-facing output.'
@@ -323,7 +328,6 @@ export const signals: Signal[] = [
       'General-wellness audiences are adopting athlete-level protein targets, pulling attention toward convenience formats.',
     state: 'candidate',
     domainScore: 64,
-    clientFit: 45,
     confidence: 66,
     suggestedAction: 'merge',
     firstSeen: '13 days ago',
@@ -337,17 +341,19 @@ export const signals: Signal[] = [
       { label: 'Novelty', value: 31, weight: 0.1, note: 'Well-covered theme' },
       { label: 'Recency', value: 80, weight: 0.05, note: 'Latest span: 4 days ago' }
     ],
-    clientBreakdown: [
-      { label: 'Domain signal', value: 64, weight: 0.6, note: 'Category-level score, shared across tenants' },
-      { label: 'Asset / offer relevance', value: 8, weight: 0.2, note: 'Jarrow is not a protein-powder brand — nothing to point at' },
-      { label: 'Audience fit', value: 30, weight: 0.1, note: 'Performance / recovery is a tertiary audience, explicitly not to be over-indexed' },
-      { label: 'Strategic priority', value: 20, weight: 0.1, note: 'Spends a content slot on a category Jarrow does not serve' }
+    confidenceBreakdown: [
+      { label: 'Evidence quantity', value: 65, weight: 0.2, note: '23 mentions across two routes — moderate volume' },
+      { label: 'Independent sources', value: 68, weight: 0.2, note: '4 shows, 3 channels — reasonable but not wide' },
+      { label: 'Extraction certainty', value: 72, weight: 0.15, note: 'Straightforward numeric-target claims, easy to extract' },
+      { label: 'Transcript completeness', value: 75, weight: 0.15, note: 'Podcast and YouTube transcripts mostly complete' },
+      { label: 'Authority', value: 60, weight: 0.15, note: 'Creator incentives skew toward protein-product sponsorship' },
+      { label: 'Contradiction ratio', value: 55, weight: 0.1, note: 'Overlaps SIG-2041’s territory — flagged as a likely duplicate' },
+      { label: 'Stability across runs', value: 60, weight: 0.05, note: '13 days old; not yet confirmed independent of the merge candidate' }
     ],
     provenance: {
       modelVersion: 'extract-v4.2',
       promptVersion: 'signal-scoring/2026-08-30',
       domainPackVersion: 'supplements@3.4.0',
-      clientProfileVersion: 'jarrow@2026-09-16',
       baseline: '28-day trailing category mean, protein cluster',
       sourceCount: 7,
       creatorCount: 7
@@ -366,8 +372,6 @@ export const signals: Signal[] = [
         caveat: 'Creator incentives skew toward protein-product sponsorship.'
       }
     ],
-    clientConnection:
-      'Weak fit — Jarrow is not a protein-powder brand. Candidate should likely merge into SIG-2041 (healthy-aging / sarcopenia narrative) rather than stand alone.',
     contradictions: [
       'Duplicate territory with an existing approved signal.',
       'Low portfolio relevance; pursuing it spends a content slot on a category Jarrow does not serve.'
@@ -381,7 +385,6 @@ export const signals: Signal[] = [
       'Seasonal immunity content is generating specific co-dosing and ratio questions rather than generic vitamin D advice.',
     state: 'candidate',
     domainScore: 61,
-    clientFit: 69,
     confidence: 62,
     suggestedAction: 'watch',
     firstSeen: '4 days ago',
@@ -395,17 +398,19 @@ export const signals: Signal[] = [
       { label: 'Novelty', value: 27, weight: 0.1, note: 'Annual recurrence' },
       { label: 'Recency', value: 92, weight: 0.05, note: 'Latest span: 2 days ago' }
     ],
-    clientBreakdown: [
-      { label: 'Domain signal', value: 61, weight: 0.6, note: 'Category-level score, shared across tenants' },
-      { label: 'Asset / offer relevance', value: 93, weight: 0.2, note: 'Vitamin D3 + K2 combination SKU already in market' },
-      { label: 'Audience fit', value: 74, weight: 0.1, note: 'Bone and immunity framing reaches the 40+ primary audience' },
-      { label: 'Strategic priority', value: 66, weight: 0.1, note: 'Vitamins & minerals is a Tier 2 category' }
+    confidenceBreakdown: [
+      { label: 'Evidence quantity', value: 55, weight: 0.2, note: '18 mentions across two routes — a seasonal, lower-volume pattern' },
+      { label: 'Independent sources', value: 58, weight: 0.2, note: '4 sources, 2 routes — the narrowest spread in this batch' },
+      { label: 'Extraction certainty', value: 70, weight: 0.15, note: 'Ratio questions are explicit and easy to extract from listener Q&A' },
+      { label: 'Transcript completeness', value: 72, weight: 0.15, note: 'Podcast transcripts complete; web sources are FAQ-style excerpts' },
+      { label: 'Authority', value: 55, weight: 0.15, note: 'Low-authority retail FAQ and forum content dominates the web route' },
+      { label: 'Contradiction ratio', value: 60, weight: 0.1, note: 'Weak optimal-ratio evidence retained as a guardrail' },
+      { label: 'Stability across runs', value: 75, weight: 0.05, note: 'Annual recurrence makes the pattern itself predictable, even with low novelty' }
     ],
     provenance: {
       modelVersion: 'extract-v4.2',
       promptVersion: 'signal-scoring/2026-08-30',
       domainPackVersion: 'supplements@3.4.0',
-      clientProfileVersion: 'jarrow@2026-09-16',
       baseline: '28-day trailing category mean, micronutrient cluster',
       sourceCount: 4,
       creatorCount: 4
@@ -424,8 +429,6 @@ export const signals: Signal[] = [
         caveat: 'Low-authority sources dominate this route.'
       }
     ],
-    clientConnection:
-      'Jarrow already sells a D3 + K2 combination SKU. This is a straightforward seasonal education opportunity with an existing product to point at.',
     contradictions: [
       'Seasonally recurring — momentum may be calendar-driven rather than a genuine trend.',
       'Optimal-ratio evidence is weak; avoid a precise-sounding recommendation.'
