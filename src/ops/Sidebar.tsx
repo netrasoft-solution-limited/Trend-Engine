@@ -16,6 +16,7 @@ import {
 'lucide-react';
 import { digest } from '../data/signals';
 import { resolutionQueue } from '../data/resolution';
+import { useOpsSession } from './session';
 
 interface NavItem {
   to: string;
@@ -86,6 +87,12 @@ function NavGroup({ label, items }: {label: string;items: NavItem[];}) {
 }
 
 export function Sidebar() {
+  const { role, logout } = useOpsSession();
+  // PRD §3.2: tenant onboarding is a Platform Admin capability. Hiding the
+  // link is a convenience only — `PlatformAdminOnly` on the page itself is
+  // the actual control, same discipline as the portal's `AdminOnly`.
+  const tenants = TENANTS.filter((item) => item.to !== '/ops/tenants' || role === 'Platform Admin');
+
   return (
     <nav
       aria-label="Primary"
@@ -94,7 +101,7 @@ export function Sidebar() {
       <div className="space-y-5 overflow-y-auto">
         <NavGroup label="Pipeline" items={PIPELINE} />
         <NavGroup label="Evidence" items={EVIDENCE} />
-        <NavGroup label="Tenants" items={TENANTS} />
+        <NavGroup label="Tenants" items={tenants} />
         <NavGroup label="System" items={SYSTEM} />
       </div>
       <div className="space-y-2 pt-3">
@@ -124,6 +131,7 @@ export function Sidebar() {
 
         <button
           type="button"
+          onClick={logout}
           className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-accent transition-colors duration-150 hover:bg-accent-soft">
 
           <LogOutIcon className="h-4 w-4" />

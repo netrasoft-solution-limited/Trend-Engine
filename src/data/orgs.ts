@@ -62,8 +62,9 @@ export const organizations: Organization[] = [
 ];
 
 export const orgUsers: OrgUser[] = [
-  { id: 'OU-1', orgId: 'org-jarrow', name: 'Dana Whitfield', email: 'd.whitfield@jarrow.example', role: 'Org Admin', invitedBy: 'abubakar', status: 'active', lastLogin: 'Today 09:02' },
-  { id: 'OU-2', orgId: 'org-jarrow', name: 'Priya Raman', email: 'p.raman@jarrow.example', role: 'Org Viewer', invitedBy: 'd.whitfield', status: 'active', lastLogin: 'Yesterday 15:41' },
+  // Emails match the portal's demo login accounts (`portal/auth/authService.ts`) so the two fixtures stay one story.
+  { id: 'OU-1', orgId: 'org-jarrow', name: 'Dana Whitfield', email: 'dana@jarrow.example', role: 'Org Admin', invitedBy: 'abubakar', status: 'active', lastLogin: 'Today 09:02' },
+  { id: 'OU-2', orgId: 'org-jarrow', name: 'Priya Raman', email: 'priya@jarrow.example', role: 'Org Viewer', invitedBy: 'd.whitfield', status: 'active', lastLogin: 'Yesterday 15:41' },
   { id: 'OU-3', orgId: 'org-jarrow', name: 'Marcus Bell', email: 'm.bell@jarrow.example', role: 'Org Viewer', invitedBy: 'd.whitfield', status: 'active', lastLogin: 'Sep 16 11:20' },
   { id: 'OU-4', orgId: 'org-jarrow', name: 'Sofia Lindqvist', email: 's.lindqvist@jarrow.example', role: 'Org Viewer', invitedBy: 'd.whitfield', status: 'invited', lastLogin: null }
 ];

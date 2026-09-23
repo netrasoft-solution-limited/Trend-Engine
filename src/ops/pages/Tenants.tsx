@@ -2,6 +2,7 @@ import { CreditCardIcon, FlaskConicalIcon, LockIcon, ShieldIcon } from 'lucide-r
 import { PageHeader } from '../../components/PageHeader';
 import { Panel, PanelHeader } from '../../components/Panel';
 import { dataProtection, invoices, onboardingSteps, organizations, orgUsers, subscriptions } from '../../data/orgs';
+import { PlatformAdminOnly } from '../RoleGate';
 
 const STATUS_TONES: Record<string, string> = {
   active: 'bg-ok-soft text-ok',
@@ -21,6 +22,7 @@ export function Tenants() {
   const fixtures = organizations.filter((o) => o.isFixture);
 
   return (
+    <PlatformAdminOnly>
     <div className="space-y-3">
       <PageHeader
         eyebrow="Platform Admin"
@@ -259,6 +261,7 @@ export function Tenants() {
           </Panel>
         </div>
       </div>
-    </div>);
+    </div>
+    </PlatformAdminOnly>);
 
 }

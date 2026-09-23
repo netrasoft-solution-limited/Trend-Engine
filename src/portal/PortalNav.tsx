@@ -1,8 +1,7 @@
 import { NavLink } from 'react-router-dom';
-import { BellIcon, BookOpenIcon, CalendarClockIcon, ChevronDownIcon, CreditCardIcon, UsersIcon } from 'lucide-react';
+import { BellIcon, BookOpenIcon, CalendarClockIcon, CreditCardIcon, UsersIcon } from 'lucide-react';
 import { usePortalSession } from './session';
 import { notificationsForOrg } from '../data/publications';
-import { OrgRole } from '../types';
 
 interface NavItem {
   to: string;
@@ -66,7 +65,7 @@ function NavGroup({ label, items, onNavigate }: {label: string;items: NavItem[];
 }
 
 export function PortalNav({ isDrawerOpen = false, onNavigate }: {isDrawerOpen?: boolean;onNavigate?: () => void;}) {
-  const { orgId, userName, role, setRole } = usePortalSession();
+  const { orgId, userName, role } = usePortalSession();
   const unread = notificationsForOrg(orgId).filter((n) => !n.read).length;
   const delivery = DELIVERY.map((item) =>
   item.to === '/portal/notifications' && unread > 0 ? {...item, badge: String(unread)} :
@@ -87,26 +86,13 @@ export function PortalNav({ isDrawerOpen = false, onNavigate }: {isDrawerOpen?: 
       </div>
 
       <div className="space-y-2 pt-3">
-        {/*
-          Role switcher — a review aid only. In the real portal the role comes
-          from the OrgUser record and cannot be changed by the user.
-        */}
-        <label className="relative flex items-center gap-1.5 rounded-xl bg-shell py-2 pl-3 pr-2 text-xs">
+        {/* Role comes from the signed-in account and is not switchable here — see src/portal/session.ts. */}
+        <div className="flex items-center gap-1.5 rounded-xl bg-shell py-2 pl-3 pr-2 text-xs">
           <span className="leading-tight">
             <span className="block font-semibold text-ink">{userName}</span>
             <span className="block text-2xs text-ink-mute">{role}</span>
           </span>
-          <span className="sr-only">Viewing as role</span>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as OrgRole)}
-            className="ml-auto cursor-pointer appearance-none bg-transparent pr-4 text-2xs font-semibold text-ink-soft focus:outline-none">
-
-            <option value="Org Admin">Org Admin</option>
-            <option value="Org Viewer">Org Viewer</option>
-          </select>
-          <ChevronDownIcon className="pointer-events-none absolute right-2 h-3 w-3 text-ink-mute" />
-        </label>
+        </div>
       </div>
     </nav>);
 

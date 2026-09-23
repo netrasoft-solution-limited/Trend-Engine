@@ -1,5 +1,6 @@
-import { ShieldCheckIcon } from 'lucide-react';
+import { CreditCardIcon, ShieldCheckIcon } from 'lucide-react';
 import { AdminOnly } from '../AdminOnly';
+import { NoticeCard } from '../../components/NoticeCard';
 import { usePortalSession } from '../session';
 import { invoices, subscriptions } from '../../data/orgs';
 
@@ -26,6 +27,16 @@ export function Subscription() {
             Your plan and invoice history.
           </p>
         </header>
+
+        {!subscription && (
+          <div className="mb-4">
+            <NoticeCard
+              icon={CreditCardIcon}
+              title="No subscription on file yet"
+              message="Your Pure Play contact will set this up as part of onboarding. Check back once your plan is active." />
+
+          </div>
+        )}
 
         {subscription &&
         <section className="mb-4 rounded-2xl border border-line bg-card p-5 shadow-panel">
@@ -68,6 +79,7 @@ export function Subscription() {
           <div className="border-b border-line px-5 py-4">
             <h2 className="text-[15px] font-semibold text-ink">Invoices</h2>
           </div>
+          {rows.length === 0 && <p className="px-5 py-8 text-center text-sm text-ink-mute">No invoices issued yet.</p>}
           <ul className="divide-y divide-line">
             {rows.map((inv) =>
             <li key={inv.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3.5">

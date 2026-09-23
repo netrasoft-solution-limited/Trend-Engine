@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { CheckCircle2Icon, ClockIcon, EyeIcon } from 'lucide-react';
+import { CalendarClockIcon, CheckCircle2Icon, ClockIcon, EyeIcon } from 'lucide-react';
+import { NoticeCard } from '../../components/NoticeCard';
 import { usePortalSession } from '../session';
 import { deliveriesForOrg } from '../../data/publications';
 import { DeliveryState } from '../../types';
@@ -30,6 +31,14 @@ export function Delivery() {
           under <Link to="/portal" className="font-semibold text-accent-deep hover:underline">published</Link>.
         </p>
       </header>
+
+      {rows.length === 0 && (
+        <NoticeCard
+          icon={CalendarClockIcon}
+          title="Nothing scheduled yet"
+          message="Once Pure Play starts preparing something for your organisation, it will show up here before it's ready to read." />
+
+      )}
 
       <ul className="space-y-2">
         {rows.map((row) => {

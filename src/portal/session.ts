@@ -10,6 +10,11 @@ import { OrgRole } from '../types';
  * its own tenant would be the escalation path the two-realm split exists to
  * prevent.
  *
+ * `role` comes from the account that signed in (`auth/authService.ts`) and is
+ * not switchable from here — an earlier version of this prototype let a
+ * viewer pick their own role from a dropdown, which is exactly the kind of
+ * client-side control PRD §3.2 requires to be server-decided instead.
+ *
  * MODULES UNDER `src/portal/` MAY READ `data/publications.ts` AND NOTHING ELSE
  * FROM THE OUTPUT LAYER — Arch §9.3, enforced by `npm run boundary`.
  */
@@ -17,8 +22,9 @@ export interface PortalSession {
   orgId: string;
   orgName: string;
   userName: string;
+  email: string;
   role: OrgRole;
-  setRole: (role: OrgRole) => void;
+  logout: () => void;
 }
 
 export const SessionContext = createContext<PortalSession | null>(null);

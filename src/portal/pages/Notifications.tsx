@@ -64,6 +64,11 @@ export function Notifications() {
         <div className="border-b border-line px-5 py-4">
           <h2 className="text-[15px] font-semibold text-ink">History</h2>
         </div>
+        {history.length === 0 && (
+          <p className="px-5 py-8 text-center text-sm text-ink-mute">
+            Nothing sent yet. We’ll notify you here the first time something is published to your organisation.
+          </p>
+        )}
         <ul className="divide-y divide-line">
           {history.map((n) =>
           <li key={n.id} className="flex items-start gap-3 px-5 py-3.5">

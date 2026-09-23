@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PortalHeader } from './PortalHeader';
 import { PortalNav } from './PortalNav';
 import { PortalProfilePanel } from './PortalProfilePanel';
 import { PortalSession, SessionContext } from './session';
-import { OrgRole } from '../types';
 
 /**
  * TENANT PLANE — `/portal/*`.
@@ -13,18 +12,17 @@ import { OrgRole } from '../types';
  * model (`OrgUser`), separate auth backend, separate WSGI process. Making the
  * two surfaces look and feel different is part of that — a client should never
  * be one misconfiguration away from an operator view.
+ *
+ * Pure chrome-and-context: it takes an already-resolved `session` rather than
+ * building one, because the resolving is `RequirePortalSession`'s job (real
+ * login) or a test fixture's (the render smoke test) — never this component's.
  */
 interface PortalShellProps {
   children: React.ReactNode;
-  /** Starting role. Exists so the smoke test can render the Org Viewer case. */
-  initialRole?: OrgRole;
+  session: PortalSession;
 }
 
-export function PortalShell({ children, initialRole = 'Org Admin' }: PortalShellProps) {
-  // Role is switchable here only so the two permission levels can be reviewed
-  // side by side. In the real portal it comes from the OrgUser record and the
-  // user cannot change it.
-  const [role, setRole] = useState<OrgRole>(initialRole);
+export function PortalShell({ children, session }: PortalShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -41,17 +39,6 @@ export function PortalShell({ children, initialRole = 'Org Admin' }: PortalShell
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [drawerOpen, profileOpen]);
-
-  const session = useMemo<PortalSession>(
-    () => ({
-      orgId: 'org-jarrow',
-      orgName: 'Jarrow Formulas',
-      userName: role === 'Org Admin' ? 'Dana Whitfield' : 'Priya Raman',
-      role,
-      setRole
-    }),
-    [role]
-  );
 
   return (
     <SessionContext.Provider value={session}>

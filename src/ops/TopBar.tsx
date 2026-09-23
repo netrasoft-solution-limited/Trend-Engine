@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ActivityIcon, BellIcon, ChevronDownIcon, CommandIcon, SearchIcon, ShieldIcon, ZapIcon } from 'lucide-react';
+import { ActivityIcon, BellIcon, ChevronDownIcon, CommandIcon, LogOutIcon, SearchIcon, ShieldIcon, ZapIcon } from 'lucide-react';
 import { organizations } from '../data/orgs';
 import { vendorSpend } from '../data/operations';
+import { useOpsSession } from './session';
 
 /**
  * Arch §5.3: on the operator plane the tenant binding is `OPERATOR_ALL` by
@@ -9,8 +10,11 @@ import { vendorSpend } from '../data/operations';
  * it is hard-bound to the session's org and cannot widen.
  */
 export function TopBar() {
+  const { name, email, role, logout } = useOpsSession();
   const [scopeOpen, setScopeOpen] = useState(false);
   const [scope, setScope] = useState<{ id: string; name: string } | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const initials = name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
   const spend = vendorSpend.reduce((sum, v) => sum + v.spend, 0);
   const cap = vendorSpend.reduce((sum, v) => sum + v.cap, 0);
@@ -127,17 +131,47 @@ export function TopBar() {
           <span className="absolute right-2.5 top-2.5 h-1.5 w-1.5 rounded-full bg-accent" />
         </button>
 
-        <div className="flex items-center gap-2 rounded-xl bg-shell py-1.5 pl-1.5 pr-3">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-2xs font-bold text-white">
-            AB
-          </span>
-          <div className="hidden leading-tight sm:block">
-            <p className="text-xs font-semibold text-ink">Abubakar</p>
-            <p className="flex items-center gap-1 text-2xs text-ink-mute">
-              <ShieldIcon className="h-2.5 w-2.5" />
-              Operator · Platform Admin
-            </p>
-          </div>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setUserMenuOpen((o) => !o)}
+            aria-expanded={userMenuOpen}
+            aria-label={`Account menu for ${name}`}
+            className="flex items-center gap-2 rounded-xl bg-shell py-1.5 pl-1.5 pr-3 transition-colors duration-150 hover:bg-line">
+
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-2xs font-bold text-white">
+              {initials}
+            </span>
+            <div className="hidden leading-tight sm:block">
+              <p className="text-xs font-semibold text-ink">{name}</p>
+              <p className="flex items-center gap-1 text-2xs text-ink-mute">
+                <ShieldIcon className="h-2.5 w-2.5" />
+                {role}
+              </p>
+            </div>
+            <ChevronDownIcon className="hidden h-3.5 w-3.5 text-ink-mute sm:block" />
+          </button>
+          {userMenuOpen &&
+          <div className="absolute right-0 top-full z-20 mt-1.5 w-56 overflow-hidden rounded-xl border border-line bg-card p-1 shadow-lg">
+              <div className="px-2.5 py-2">
+                <p className="text-xs font-semibold text-ink">{name}</p>
+                <p className="text-2xs text-ink-mute">{email}</p>
+                <p className="mt-0.5 text-2xs font-semibold text-accent-deep">{role}</p>
+              </div>
+              <div className="my-1 border-t border-line" />
+              <button
+              type="button"
+              onClick={() => {
+                setUserMenuOpen(false);
+                logout();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold text-accent transition-colors duration-150 hover:bg-accent-soft">
+
+                <LogOutIcon className="h-3.5 w-3.5" />
+                Log out
+              </button>
+            </div>
+          }
         </div>
       </div>
     </header>);

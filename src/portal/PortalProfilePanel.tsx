@@ -9,7 +9,7 @@ interface PortalProfilePanelProps {
 }
 
 export function PortalProfilePanel({ open, onClose }: PortalProfilePanelProps) {
-  const { orgId, orgName, userName, role } = usePortalSession();
+  const { orgId, orgName, userName, role, logout } = usePortalSession();
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const user = orgUsers.find((member) => member.orgId === orgId && member.name === userName);
@@ -83,6 +83,7 @@ export function PortalProfilePanel({ open, onClose }: PortalProfilePanelProps) {
 
       <button
         type="button"
+        onClick={logout}
         className="mt-auto flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-accent transition-colors duration-150 hover:bg-accent-soft">
 
         <LogOutIcon className="h-4 w-4" />
