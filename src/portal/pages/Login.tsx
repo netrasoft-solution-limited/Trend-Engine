@@ -3,7 +3,6 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangleIcon, RotateCcwIcon } from 'lucide-react';
 import { AuthShell } from '../AuthShell';
 import { usePortalAuth } from '../auth/PortalAuthContext';
-import { PortalAuthError } from '../auth/authService';
 
 export function Login() {
   const auth = usePortalAuth();
@@ -34,7 +33,7 @@ export function Login() {
       // page the visitor originally asked for — it re-renders into that page
       // on its own now that `auth.status` is signed-in.
     } catch (err) {
-      setError(err instanceof PortalAuthError ? err.message : 'Something went wrong. Try again.');
+      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
       setStatus('error');
     }
   }
@@ -89,13 +88,6 @@ export function Login() {
           {status === 'submitting' ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
-
-      <div className="mt-4 rounded-xl border border-dashed border-line bg-shell px-3 py-2.5 text-2xs leading-relaxed text-ink-mute">
-        <p className="font-semibold text-ink-soft">Demo accounts · password portal-demo-2026</p>
-        <p>Org Admin — dana@jarrow.example</p>
-        <p>Org Viewer — priya@jarrow.example</p>
-        <p>Newly onboarded org, nothing published yet — jordan@newco.example</p>
-      </div>
     </AuthShell>);
 
 }

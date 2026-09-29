@@ -1,5 +1,8 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import { portalAuthService, PortalAuthUser } from './authService';
+import { getCsrfToken } from '../api/csrf';
+import { login as apiLogin } from '../api/login';
+import { logout as apiLogout } from '../api/logout';
 
 export type PortalAuthStatus = 'signed-in' | 'signed-out';
 
@@ -27,12 +30,22 @@ export function PortalAuthProvider({ children }: { children: React.ReactNode }) 
       status: user ? 'signed-in' : 'signed-out',
       user,
       login: async (email, password) => {
-        const result = await portalAuthService.login(email, password);
-        setUser(result.user);
-        return result.user;
+        const { csrfToken } = await getCsrfToken();
+        const result = await apiLogin(email, password, csrfToken);
+        const loggedInUser: PortalAuthUser = {
+          id: String(result.id),
+          name: result.name,
+          email: result.email,
+          role: result.role_label as PortalAuthUser['role'],
+          orgId: String(result.organization.id),
+          orgName: result.organization.name
+        };
+        setUser(loggedInUser);
+        return loggedInUser;
       },
       logout: async () => {
-        await portalAuthService.logout();
+        const { csrfToken } = await getCsrfToken();
+        await apiLogout(csrfToken);
         setUser(null);
       },
       completeVerification: (verifiedUser) => setUser(verifiedUser)

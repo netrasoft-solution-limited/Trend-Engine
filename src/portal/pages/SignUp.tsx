@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangleIcon, RotateCcwIcon } from 'lucide-react';
 import { AuthShell } from '../AuthShell';
-import { portalAuthService } from '../auth/authService';
+import { getCsrfToken } from '../api/csrf';
+import { register } from '../api/register';
 
 const EMPTY_FORM = { organizationName: '', fullName: '', email: '', password: '' };
 
@@ -10,6 +11,7 @@ export function SignUp() {
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY_FORM);
   const [status, setStatus] = useState<'idle' | 'submitting' | 'error'>('idle');
+  const [error, setError] = useState('');
 
   function field(key: keyof typeof form) {
     return {
@@ -21,12 +23,15 @@ export function SignUp() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setStatus('submitting');
+    setError('');
     try {
-      const result = await portalAuthService.signUp(form);
-      navigate(`/portal/check-email?email=${encodeURIComponent(result.email)}`);
-    } catch {
-      // The mock never actually throws here, but a real endpoint could
-      // (network failure, validation) — the error state exists for that.
+      const { csrfToken } = await getCsrfToken();
+      await register(form.organizationName, form.fullName, form.email, form.password, csrfToken);
+      // register() only returns {detail} — no email echoed back — so the
+      // redirect uses what was actually typed into the form.
+      navigate(`/portal/check-email?email=${encodeURIComponent(form.email)}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
       setStatus('error');
     }
   }
@@ -35,7 +40,7 @@ export function SignUp() {
     <AuthShell
       eyebrow="Client portal"
       title="Register your organisation"
-      description="Creates your organisation and signs you in as its first Org Admin once you verify your email."
+      description="Creates your organisation. You'll sign in once your email is verified."
       footer={
         <>
           Already have an account?{' '}
@@ -49,7 +54,7 @@ export function SignUp() {
         {status === 'error' && (
           <div role="alert" className="flex items-start gap-2 rounded-xl border border-bad/35 bg-bad-soft px-3.5 py-3">
             <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-bad" />
-            <p className="text-xs leading-relaxed text-ink">Something went wrong. Try again.</p>
+            <p className="text-xs leading-relaxed text-ink">{error || 'Something went wrong. Try again.'}</p>
           </div>
         )}
         <label className="block">

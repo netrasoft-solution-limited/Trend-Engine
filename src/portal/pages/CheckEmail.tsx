@@ -1,19 +1,28 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MailIcon, RotateCcwIcon } from 'lucide-react';
+import { AlertTriangleIcon, MailIcon, RotateCcwIcon } from 'lucide-react';
 import { AuthShell } from '../AuthShell';
-import { portalAuthService, PORTAL_DEMO_TOKENS } from '../auth/authService';
+import { getCsrfToken } from '../api/csrf';
+import { resendVerification } from '../api/resendVerification';
 
 export function CheckEmail() {
   const [params] = useSearchParams();
   const email = params.get('email');
-  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [resendError, setResendError] = useState('');
 
   async function onResend() {
     if (!email) return;
     setResendStatus('sending');
-    await portalAuthService.resendVerification(email);
-    setResendStatus('sent');
+    setResendError('');
+    try {
+      const { csrfToken } = await getCsrfToken();
+      await resendVerification(email, csrfToken);
+      setResendStatus('sent');
+    } catch (err) {
+      setResendError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setResendStatus('error');
+    }
   }
 
   return (
@@ -43,23 +52,12 @@ export function CheckEmail() {
           {resendStatus === 'sending' ? 'Sending…' : resendStatus === 'sent' ? 'Sent again' : 'Resend email'}
         </button>
 
-        <div className="rounded-xl border border-dashed border-line bg-shell px-3 py-2.5 text-2xs leading-relaxed text-ink-mute">
-          <p className="mb-1 font-semibold text-ink-soft">Design demo — no email is actually sent</p>
-          <p>
-            <Link to={`/portal/verify-email/${PORTAL_DEMO_TOKENS.valid}`} className="font-semibold text-accent-deep hover:underline">
-              Continue as if you clicked the link
-            </Link>
-            , or see{' '}
-            <Link to={`/portal/verify-email/${PORTAL_DEMO_TOKENS.expired}`} className="font-semibold text-accent-deep hover:underline">
-              an expired link
-            </Link>{' '}
-            or{' '}
-            <Link to={`/portal/verify-email/${PORTAL_DEMO_TOKENS.used}`} className="font-semibold text-accent-deep hover:underline">
-              one already used
-            </Link>
-            .
-          </p>
-        </div>
+        {resendStatus === 'error' && (
+          <div role="alert" className="flex items-start gap-2 rounded-xl border border-bad/35 bg-bad-soft px-3.5 py-3">
+            <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-bad" />
+            <p className="text-xs leading-relaxed text-ink">{resendError}</p>
+          </div>
+        )}
 
         <p className="text-center text-xs text-ink-soft">
           Wrong address?{' '}
