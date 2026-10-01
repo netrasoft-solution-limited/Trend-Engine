@@ -1,31 +1,33 @@
 import { createContext, useContext } from 'react';
-import { OrgRole } from '../types';
+import { Membership, OrgRole, Organization, Session } from './api';
 
 /**
  * TENANT PLANE — portal session.
  *
- * Arch §5.3: the portal's tenant binding is hard-bound to the authenticated
- * session. There is deliberately no way to widen it from here — no operator
- * scope, no org switcher, no `OPERATOR_ALL`. A portal session that could choose
- * its own tenant would be the escalation path the two-realm split exists to
- * prevent.
+ * The session now comes from the server. Three things that used to be here are
+ * gone on purpose:
  *
- * `role` comes from the account that signed in (`auth/authService.ts`) and is
- * not switchable from here — an earlier version of this prototype let a
- * viewer pick their own role from a dropdown, which is exactly the kind of
- * client-side control PRD §3.2 requires to be server-decided instead.
+ *   · `setRole`. While it existed, any component could promote itself, and the
+ *     nav shipped a dropdown that let the viewer do exactly that. The role now
+ *     arrives from the active membership and is read-only to the client.
+ *   · The hardcoded `orgId`. The active organisation is whatever the server
+ *     verified a membership for on this request.
+ *   · Invented user details. `name` and `email` are the real account's.
  *
- * MODULES UNDER `src/portal/` MAY READ `data/publications.ts` AND NOTHING ELSE
- * FROM THE OUTPUT LAYER — Arch §9.3, enforced by `npm run boundary`.
+ * `switchOrg` IS here, and is a different thing from the old role switcher: it
+ * is bounded by the memberships the user actually holds, and the server
+ * re-checks that on the switch AND on every subsequent request.
  */
 export interface PortalSession {
-  orgId: string;
-  orgName: string;
-  userId: string;
-  userName: string;
-  email: string;
+  user: { id: number; email: string; name: string };
+  organization: Organization;
+  memberships: Membership[];
+  /** Role in the ACTIVE organisation. Server-decided; the client cannot set it. */
   role: OrgRole;
-  logout: () => void;
+  roleLabel: string;
+  switchOrg: (organizationId: number) => Promise<void>;
+  logout: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 export const SessionContext = createContext<PortalSession | null>(null);
@@ -39,3 +41,19 @@ export function usePortalSession(): PortalSession {
   }
   return session;
 }
+
+export function toSession(
+  data: Session,
+  actions: Pick<PortalSession, 'switchOrg' | 'logout' | 'refresh'>
+): PortalSession {
+  return {
+    user: { id: data.id, email: data.email, name: data.name },
+    organization: data.organization,
+    memberships: data.memberships,
+    role: data.role,
+    roleLabel: data.role_label,
+    ...actions
+  };
+}
+
+export const isOrgAdmin = (session: PortalSession): boolean => session.role === 'org_admin';

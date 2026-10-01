@@ -1,17 +1,15 @@
 /**
- * Every route the smoke test mounts. Keep in step with `routes.tsx`.
+ * Routes the render smoke test mounts. Keep in step with `routes.tsx`.
  *
- * It lives in its own module rather than beside the route tree so that file
- * exports only components, which is what React Fast Refresh needs.
+ * Split by what they need, because they can no longer be checked the same way:
  *
- * Not included: bare `/`, `/admin` — both are pure `<Navigate>` redirects with
- * nothing else to render, so under `renderToString` (which never runs the
- * effect a real redirect needs) they produce empty output and would fail the
- * generic "rendered something" check for a reason that has nothing to do with
- * the pages themselves. `check-render.mjs` exercises them with a dedicated
- * assertion instead.
+ *   OPS        renders from mock data, so SSR exercises it fully.
+ *   PORTAL_PUBLIC  the auth screens — no session, no fetch, fully renderable.
+ *   PORTAL_AUTHED  behind a real session. SSR can only prove they mount
+ *                  without crashing; what they actually show is asserted
+ *                  against the live API by backend/scripts/smoke-portal-api.sh.
  */
-export const ALL_ROUTES = [
+export const OPS_ROUTES = [
   '/ops',
   '/ops/signal/SIG-2041',
   '/ops/signal/SIG-2032',
@@ -23,30 +21,22 @@ export const ALL_ROUTES = [
   '/ops/tenants',
   '/ops/output',
   '/ops/output?signal=SIG-2038&type=research_alert',
-  '/ops/operations',
-  '/ops/login',
-  '/ops/verify',
+  '/ops/operations'
+];
+
+export const PORTAL_PUBLIC_ROUTES = [
+  '/portal/login',
+  '/portal/reset-password',
+  '/portal/reset-password/MQ/set-token',
+  '/portal/accept-invite/demo-token'
+];
+
+export const PORTAL_AUTHED_ROUTES = [
   '/portal',
-  '/portal?q=magnesium',
-  '/portal?type=research_alert',
-  '/portal?range=7d',
-  '/portal?read=unread',
-  '/portal?q=zzzznomatch',
-  '/portal?q=superseded',
-  '/portal/output/PUB-0042',
-  '/portal/output/PUB-0036',
   '/portal/delivery',
   '/portal/notifications',
   '/portal/team',
-  '/portal/team/OU-2',
-  '/portal/team/OU-5',
-  '/portal/subscription',
-  '/portal/feedback',
-  '/portal/login',
-  '/portal/sign-up',
-  '/portal/check-email',
-  '/portal/verify-email/demo-valid-token',
-  '/portal/verify-email/demo-expired-token',
-  '/portal/verify-email/demo-used-token',
-  '/portal/verify-email/not-a-real-token'
+  '/portal/subscription'
 ];
+
+export const ALL_ROUTES = [...OPS_ROUTES, ...PORTAL_PUBLIC_ROUTES, ...PORTAL_AUTHED_ROUTES];

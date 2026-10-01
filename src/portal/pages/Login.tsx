@@ -1,93 +1,63 @@
 import { useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangleIcon, RotateCcwIcon } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ApiError, api } from '../api';
 import { AuthShell } from '../AuthShell';
-import { usePortalAuth } from '../auth/PortalAuthContext';
+import { Field, FormError, SubmitButton } from '../Field';
 
 export function Login() {
-  const auth = usePortalAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'error'>('idle');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  // Bookmarked or typed directly while already signed in — go straight in.
-  // `RequirePortalSession` renders this component in place for a signed-out
-  // visit at any URL, so this only fires for the literal /portal/login route.
-  if (auth.status === 'signed-in' && location.pathname === '/portal/login') {
-    return <Navigate to="/portal" replace />;
-  }
-
-  async function onSubmit(event: React.FormEvent) {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setStatus('submitting');
-    setError('');
+    setBusy(true);
+    setError(null);
     try {
-      await auth.login(email, password);
-      if (location.pathname === '/portal/login') {
-        navigate('/portal', { replace: true });
-      }
-      // Otherwise this was rendered in place by the route guard at whatever
-      // page the visitor originally asked for — it re-renders into that page
-      // on its own now that `auth.status` is signed-in.
+      await api.login(email, password);
+      // Back to wherever they were headed before the redirect, if anywhere.
+      const from = (location.state as { from?: string } | null)?.from;
+      navigate(from && from.startsWith('/portal') ? from : '/portal', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
-      setStatus('error');
+      // The server returns one message for "no such account" and "wrong
+      // password" on purpose — telling them apart would let anyone test
+      // whether an address has access here.
+      setError(err instanceof ApiError ? err.message : 'We could not sign you in. Try again.');
+    } finally {
+      setBusy(false);
     }
-  }
+  };
 
   return (
-    <AuthShell
-      eyebrow="Client portal"
-      title="Sign in"
-      description="Read the outputs Pure Play has prepared for your organisation."
-      footer={
-        <>
-          New here?{' '}
-          <Link to="/portal/sign-up" className="font-semibold text-accent-deep hover:underline">
-            Register your organisation
-          </Link>
-        </>
-      }>
-
-      <form className="space-y-3" onSubmit={onSubmit} noValidate>
-        {status === 'error' && (
-          <div role="alert" className="flex items-start gap-2 rounded-xl border border-bad/35 bg-bad-soft px-3.5 py-3">
-            <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-bad" />
-            <p className="text-xs leading-relaxed text-ink">{error}</p>
-          </div>
-        )}
-        <label className="block">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-ink-mute">Work email</span>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-line bg-shell px-3 py-2.5 text-sm text-ink placeholder:text-ink-mute focus:outline-none" />
-
-        </label>
-        <label className="block">
-          <span className="text-2xs font-semibold uppercase tracking-wider text-ink-mute">Password</span>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-line bg-shell px-3 py-2.5 text-sm text-ink placeholder:text-ink-mute focus:outline-none" />
-
-        </label>
-        <button
-          type="submit"
-          disabled={status === 'submitting'}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-3.5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:bg-accent-deep disabled:cursor-not-allowed disabled:opacity-60">
-
-          {status === 'submitting' && <RotateCcwIcon className="h-3.5 w-3.5 animate-spin" />}
-          {status === 'submitting' ? 'Signing in…' : 'Sign in'}
-        </button>
+    <AuthShell title="Sign in" subtitle="Read the intelligence Pure Play prepares for you.">
+      <form onSubmit={submit} noValidate>
+        <FormError message={error} />
+        <Field
+          label="Email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          autoComplete="username"
+          autoFocus
+          placeholder="you@yourcompany.com" />
+        
+        <Field
+          label="Password"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password" />
+        
+        <SubmitButton busy={busy}>Sign in</SubmitButton>
       </form>
+      <p className="mt-4 text-center text-xs text-ink-soft">
+        <Link to="/portal/reset-password" className="font-semibold text-accent-deep hover:underline">
+          Forgot your password?
+        </Link>
+      </p>
     </AuthShell>);
 
 }
